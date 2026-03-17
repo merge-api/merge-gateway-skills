@@ -1,0 +1,30 @@
+# Migrate from Azure OpenAI
+
+Switch from the Azure OpenAI SDK to the standard OpenAI SDK through Merge Gateway.
+
+## What it does
+
+- Finds all `AzureOpenAI` client constructors and Azure-specific parameters
+- Replaces `AzureOpenAI` with standard `OpenAI` client
+- Maps Azure deployment names to Gateway model names (with your confirmation)
+- Removes Azure-specific config (`api_version`, `azure_endpoint`, `azure_ad_token`)
+- Migrates environment variables from Azure to Gateway
+
+## Install
+
+```bash
+claude install-skill https://github.com/merge-api/merge-gateway-skills
+```
+
+## Usage
+
+```
+/migrate-azure
+```
+
+Claude will scan for Azure OpenAI usage and guide you through mapping deployments to Gateway models.
+
+## Prerequisites
+
+- A Merge Gateway account with an API key (`mg_...`)
+- An existing project using the Azure OpenAI SDK (Python or TypeScript)
