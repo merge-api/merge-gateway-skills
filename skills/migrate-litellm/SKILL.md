@@ -7,6 +7,10 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 
 Migrate from a self-hosted LiteLLM proxy or the LiteLLM Python library to Merge Gateway.
 
+## Language Support
+
+**The Python SDK (`merge-gateway-sdk`) is the default and primary Gateway SDK.** Always prefer Python examples and migration paths. The TypeScript/Node SDK is **coming soon** and not yet published. TypeScript examples are included below for reference and future use only.
+
 ## Steps
 
 ### 1. Search for LiteLLM Usage
@@ -75,7 +79,7 @@ response = client.responses.create(
 )
 ```
 
-TypeScript:
+TypeScript (coming soon — SDK not yet published):
 ```typescript
 // Before
 import OpenAI from "openai";
@@ -94,11 +98,23 @@ const client = new MergeGateway({
 });
 ```
 
-**Model names:** LiteLLM uses `provider/model` format — same as Gateway. Most names transfer directly. Check and update any that need it:
+**Model names:** LiteLLM accepts models in multiple formats. Gateway requires `provider/model` format. Handle each case:
+
+**Already prefixed (transfer directly):**
 - `openai/gpt-4o` → `openai/gpt-4o` (no change)
-- `anthropic/claude-3-5-sonnet-20241022` → `anthropic/claude-sonnet-4-20250514` (update to latest)
-- `bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0` → `anthropic/claude-sonnet-4-20250514` (different prefix)
-- `azure/my-deployment` → `openai/gpt-4o` (ask user for mapping)
+- `anthropic/claude-3-5-sonnet-20241022` → `anthropic/claude-3-5-sonnet-20241022` (no change)
+
+**Un-prefixed models (need provider prefix added):**
+- `gpt-4o` → `openai/gpt-4o`
+- `gpt-4o-mini` → `openai/gpt-4o-mini`
+- `claude-3-5-haiku-20241022` → `anthropic/claude-3-5-haiku-20241022`
+- `claude-sonnet-4-20250514` → `anthropic/claude-sonnet-4-20250514`
+
+**LiteLLM-specific prefixes (need remapping):**
+- `bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0` → `anthropic/claude-3-5-sonnet-20241022` (strip Bedrock prefix and ID format)
+- `azure/my-deployment` → ask user what model the deployment maps to (e.g., `openai/gpt-4o`)
+
+**IMPORTANT:** When models lack a provider prefix, always add one. Check the config, function call sites, and any variable where model names are defined.
 
 ### 4B. Migrate LiteLLM Python Library
 
@@ -266,5 +282,5 @@ print(response.output[0].content[0].text)
 - **Never delete infrastructure without asking** — LiteLLM proxy Docker/K8s configs should be flagged, not removed.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **Merge Gateway SDK base URL** — Always append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
+- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
 - **Remove `litellm` dependency last** — Only after all `litellm` imports are removed.

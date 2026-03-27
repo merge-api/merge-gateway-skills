@@ -2,6 +2,12 @@
 
 Guide a developer through adding Merge Gateway to an existing project. Detect their stack, install the Merge Gateway SDK, update configuration, and verify the integration works.
 
+## Language Support
+
+**The Python SDK (`merge-gateway-sdk`) is the default and primary Gateway SDK.** Always prefer Python examples and migration paths. Use `from merge_gateway import MergeGateway` for all Python projects.
+
+The TypeScript/Node SDK (`merge-gateway-sdk` on npm) is **coming soon** and not yet published. TypeScript examples are included below for reference and future use, but should not be used for active migrations until the SDK is available. If a TypeScript project needs Gateway access now, use the Python SDK or contact the Gateway team.
+
 ## Steps
 
 ### 1. Detect Stack
@@ -28,12 +34,12 @@ If not, direct the user to create one:
 
 ### 3. Install the Merge Gateway SDK
 
-Python:
+Python (default):
 ```bash
 pip install merge-gateway-sdk
 ```
 
-TypeScript/Node:
+TypeScript/Node (coming soon — SDK not yet published):
 ```bash
 npm install merge-gateway-sdk
 ```
@@ -57,7 +63,7 @@ client = MergeGateway(
 )
 ```
 
-TypeScript:
+TypeScript (coming soon — SDK not yet published):
 ```typescript
 // Before (OpenAI)
 import OpenAI from "openai";
@@ -97,7 +103,7 @@ response = client.responses.create(
 print(response.output[0].content[0].text)
 ```
 
-TypeScript:
+TypeScript (coming soon):
 ```typescript
 // Before (OpenAI)
 const response = await client.chat.completions.create({
@@ -145,6 +151,8 @@ MERGE_GATEWAY_API_KEY=mg_your_api_key_here
 MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 ```
 
+**IMPORTANT:** `MERGE_GATEWAY_BASE_URL` must NOT include `/v1`. The `/v1` is appended in code. If you find the env var already set with `/v1`, strip it to avoid double-pathing.
+
 Check `.gitignore` includes `.env`. If not, warn the user.
 
 Comment out (do NOT delete) any old provider API key env vars:
@@ -175,7 +183,7 @@ response = client.responses.create(
 print(response.output[0].content[0].text)
 ```
 
-TypeScript (`test_gateway.ts`):
+TypeScript (`test_gateway.ts`) — coming soon, SDK not yet published:
 ```typescript
 import { MergeGateway } from "merge-gateway-sdk";
 
@@ -197,12 +205,26 @@ async function main() {
 main();
 ```
 
+**Embeddings migration:**
+
+The Gateway SDK also supports embeddings. The response format matches the OpenAI SDK:
+
+```python
+# Before (OpenAI)
+response = client.embeddings.create(model="text-embedding-3-small", input="Hello")
+embedding = response.data[0].embedding
+
+# After (Merge Gateway)
+response = client.embeddings.create(model="openai/text-embedding-3-small", input="Hello")
+embedding = response.data[0].embedding
+```
+
 Ask the user if they want to run the test script.
 
 ## Cross-Cutting Rules
 
 - **Never delete old configuration** — comment it out with a note about the replacement.
 - **Idempotency** — Before making changes, check if `MERGE_GATEWAY_BASE_URL` or `api-gateway.merge.dev` is already present. If so, skip those files and tell the user.
-- **Both languages** — Support Python and TypeScript/Node.js patterns. Detect which is in use from the project.
+- **Python is the default** — The Python SDK is the primary Gateway SDK. TypeScript SDK is coming soon. Always prefer Python migration paths. If a TypeScript project is detected, note that the TS SDK is not yet available and suggest using the Python SDK or waiting.
 - **Provider-prefixed models** — ALL model names must use the `provider/model` format when going through Gateway.
-- **Base URL** — Append `/v1` to the base URL: `MERGE_GATEWAY_BASE_URL + "/v1"`.
+- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code: `MERGE_GATEWAY_BASE_URL + "/v1"`. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
