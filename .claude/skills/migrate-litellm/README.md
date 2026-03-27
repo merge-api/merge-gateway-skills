@@ -5,8 +5,8 @@ Replace a self-hosted LiteLLM proxy or the LiteLLM Python library with managed M
 ## What it does
 
 - Detects whether you're using the LiteLLM proxy, library, or both
-- Migrates OpenAI SDK clients pointed at a LiteLLM proxy to Gateway
-- Replaces `litellm.completion()` / `litellm.acompletion()` calls with OpenAI SDK
+- Migrates clients pointed at a LiteLLM proxy to the Merge Gateway SDK
+- Replaces `litellm.completion()` / `litellm.acompletion()` calls with Merge Gateway SDK
 - Removes LiteLLM-specific configuration (callbacks, verbose mode, `drop_params`)
 - Consolidates provider API keys into a single Gateway key
 - Flags LiteLLM infrastructure (Docker, Kubernetes) for cleanup

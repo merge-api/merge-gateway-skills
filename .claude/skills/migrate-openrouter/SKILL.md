@@ -35,9 +35,10 @@ client = OpenAI(
 )
 
 # After
-client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+from merge_gateway import MergeGateway
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 ```
 
@@ -50,9 +51,10 @@ const client = new OpenAI({
 });
 
 // After
-const client = new OpenAI({
-  baseURL: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
-  apiKey: process.env.MERGE_GATEWAY_API_KEY,
+import { MergeGateway } from "merge-gateway-sdk";
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 ```
 
@@ -87,9 +89,9 @@ response = client.chat.completions.create(
 )
 
 # After
-response = client.chat.completions.create(
+response = client.responses.create(
     model="openai/gpt-4o",
-    messages=messages,
+    input=[{"type": "message", "role": "user", "content": msg} for msg in messages],
 )
 ```
 
@@ -111,9 +113,10 @@ client = OpenAI(
 )
 
 # After
-client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+from merge_gateway import MergeGateway
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 ```
 
@@ -142,35 +145,35 @@ Generate a test script:
 Python (`test_gateway.py`):
 ```python
 import os
-from openai import OpenAI
+from merge_gateway import MergeGateway
 
-client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
-response = client.chat.completions.create(
+response = client.responses.create(
     model="openai/gpt-4o",
-    messages=[{"role": "user", "content": "Say 'Migration successful!' and nothing else."}],
+    input=[{"type": "message", "role": "user", "content": "Say 'Migration successful!' and nothing else."}],
 )
-print(response.choices[0].message.content)
+print(response.output[0].content)
 ```
 
 TypeScript (`test_gateway.ts`):
 ```typescript
-import OpenAI from "openai";
+import { MergeGateway } from "merge-gateway-sdk";
 
-const client = new OpenAI({
-  baseURL: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
-  apiKey: process.env.MERGE_GATEWAY_API_KEY,
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 
 async function main() {
-  const response = await client.chat.completions.create({
+  const response = await client.responses.create({
     model: "openai/gpt-4o",
-    messages: [{ role: "user", content: "Say 'Migration successful!' and nothing else." }],
+    input: [{ type: "message", role: "user", content: "Say 'Migration successful!' and nothing else." }],
   });
-  console.log(response.choices[0].message.content);
+  console.log(response.output[0].content);
 }
 
 main();
@@ -193,4 +196,4 @@ Explain to the user how OpenRouter features map to Gateway:
 - **Never delete old configuration** — comment out old env vars with a note about the replacement.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **OpenAI SDK base URL** — Always append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
+- **Merge Gateway SDK base URL** — Always append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.

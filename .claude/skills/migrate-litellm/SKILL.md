@@ -57,16 +57,16 @@ response = client.chat.completions.create(
 )
 
 # After
-from openai import OpenAI
+from merge_gateway import MergeGateway
 
-client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
-response = client.chat.completions.create(
+response = client.responses.create(
     model="openai/gpt-4o",
-    messages=[{"role": "user", "content": "Hello!"}],
+    input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
 ```
 
@@ -81,11 +81,11 @@ const client = new OpenAI({
 });
 
 // After
-import OpenAI from "openai";
+import { MergeGateway } from "merge-gateway-sdk";
 
-const client = new OpenAI({
-  baseURL: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
-  apiKey: process.env.MERGE_GATEWAY_API_KEY,
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 ```
 
@@ -97,7 +97,7 @@ const client = new OpenAI({
 
 ### 4B. Migrate LiteLLM Python Library
 
-Replace `litellm.completion()` calls with OpenAI SDK calls:
+Replace `litellm.completion()` calls with Merge Gateway SDK calls:
 
 ```python
 # Before
@@ -111,20 +111,19 @@ response = litellm.completion(
 print(response.choices[0].message.content)
 
 # After
-from openai import OpenAI
+from merge_gateway import MergeGateway
 import os
 
-client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
-response = client.chat.completions.create(
+response = client.responses.create(
     model="openai/gpt-4o",
-    messages=[{"role": "user", "content": "Hello!"}],
-    temperature=0.7,
+    input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
-print(response.choices[0].message.content)
+print(response.output[0].content)
 ```
 
 **Async migration:**
@@ -138,17 +137,17 @@ response = await litellm.acompletion(
 )
 
 # After
-from openai import AsyncOpenAI
+from merge_gateway import AsyncMergeGateway
 import os
 
-client = AsyncOpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+client = AsyncMergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
-response = await client.chat.completions.create(
+response = await client.responses.create(
     model="openai/gpt-4o",
-    messages=messages,
+    input=[{"type": "message", "role": "user", "content": msg} for msg in messages],
 )
 ```
 
@@ -164,14 +163,13 @@ for chunk in response:
     print(chunk.choices[0].delta.content or "", end="")
 
 # After
-stream = client.chat.completions.create(
+response = client.responses.create(
     model="openai/gpt-4o",
-    messages=messages,
+    input=[{"type": "message", "role": "user", "content": msg} for msg in messages],
     stream=True,
 )
-for chunk in stream:
-    if chunk.choices[0].delta.content:
-        print(chunk.choices[0].delta.content, end="")
+for event in response:
+    print(event, end="")
 ```
 
 **Embedding migration:**
@@ -180,7 +178,7 @@ for chunk in stream:
 response = litellm.embedding(model="openai/text-embedding-ada-002", input=["Hello"])
 
 # After
-response = client.embeddings.create(model="openai/text-embedding-ada-002", input=["Hello"])
+response = client.responses.create(model="openai/text-embedding-ada-002", input=["Hello"])
 ```
 
 ### 5. Remove LiteLLM-Specific Configuration
@@ -243,18 +241,18 @@ Generate a test script:
 
 ```python
 import os
-from openai import OpenAI
+from merge_gateway import MergeGateway
 
-client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
-response = client.chat.completions.create(
+response = client.responses.create(
     model="openai/gpt-4o",
-    messages=[{"role": "user", "content": "Say 'LiteLLM migration successful!' and nothing else."}],
+    input=[{"type": "message", "role": "user", "content": "Say 'LiteLLM migration successful!' and nothing else."}],
 )
-print(response.choices[0].message.content)
+print(response.output[0].content)
 ```
 
 ## Cross-Cutting Rules
@@ -263,5 +261,5 @@ print(response.choices[0].message.content)
 - **Never delete infrastructure without asking** — LiteLLM proxy Docker/K8s configs should be flagged, not removed.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **OpenAI SDK base URL** — Always append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
+- **Merge Gateway SDK base URL** — Always append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
 - **Remove `litellm` dependency last** — Only after all `litellm` imports are removed.

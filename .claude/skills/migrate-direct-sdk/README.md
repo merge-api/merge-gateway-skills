@@ -5,8 +5,8 @@ Migrate from calling OpenAI, Anthropic, or Google directly to routing through Me
 ## What it does
 
 - Finds all direct provider SDK usage (OpenAI, Anthropic, Google Generative AI)
-- Updates client constructors with Gateway base URL and API key
-- Converts Google Generative AI code to OpenAI SDK format
+- Updates client constructors to use the Merge Gateway SDK
+- Converts Google Generative AI code to Merge Gateway SDK format
 - Prefixes all model names with their provider (`gpt-4o` → `openai/gpt-4o`)
 - Consolidates multiple provider API keys into a single Gateway key
 
