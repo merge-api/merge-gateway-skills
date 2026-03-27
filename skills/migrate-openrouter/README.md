@@ -14,7 +14,8 @@ Swap OpenRouter URLs, headers, and params for Merge Gateway equivalents.
 ## Install
 
 ```bash
-claude install-skill https://github.com/merge-api/merge-gateway-skills
+claude plugin marketplace add merge-api/merge-gateway-skills
+claude plugin install merge-gateway
 ```
 
 ## Usage

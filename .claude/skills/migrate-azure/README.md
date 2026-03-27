@@ -13,7 +13,8 @@ Switch from the Azure OpenAI SDK to the Merge Gateway SDK.
 ## Install
 
 ```bash
-claude install-skill https://github.com/merge-api/merge-gateway-skills
+claude plugin marketplace add merge-api/merge-gateway-skills
+claude plugin install merge-gateway
 ```
 
 ## Usage
