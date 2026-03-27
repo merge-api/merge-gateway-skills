@@ -1,0 +1,19 @@
+{
+  "name": "merge-gateway-skills",
+  "description": "Claude Code skills for onboarding to Merge Gateway — integrate, build agents, and migrate from other providers",
+  "owner": {
+    "name": "Merge",
+    "email": "support@merge.dev"
+  },
+  "plugins": [
+    {
+      "name": "merge-gateway",
+      "source": "./",
+      "description": "Claude Code skills for integrating with, building on, and migrating to Merge Gateway",
+      "version": "1.0.0",
+      "author": {
+        "name": "Merge"
+      }
+    }
+  ]
+}
