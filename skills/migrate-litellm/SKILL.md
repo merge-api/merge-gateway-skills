@@ -148,6 +148,9 @@ print(response.output[0].content[0].text)
 ```
 
 **Async migration:**
+
+> **Note:** The Merge Gateway Python SDK does not yet have an async client (`AsyncMergeGateway` is not available). For async code, wrap the synchronous client call in an executor:
+
 ```python
 # Before
 import litellm
@@ -157,16 +160,18 @@ response = await litellm.acompletion(
     messages=messages,
 )
 
-# After
-from merge_gateway import AsyncMergeGateway
+# After — use sync client in an executor until async is supported
+import asyncio
 import os
+from merge_gateway import MergeGateway
 
-client = AsyncMergeGateway(
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
     base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
-response = await client.responses.create(
+response = await asyncio.to_thread(
+    client.responses.create,
     model="openai/gpt-4o",
     input=[{"type": "message", "role": msg["role"], "content": msg["content"]} for msg in messages],
 )

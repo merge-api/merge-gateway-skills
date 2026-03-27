@@ -103,7 +103,7 @@ def execute_tool(name: str, arguments: dict) -> str:
 # --- Agent loop ---
 
 def run_agent(user_message: str, system_prompt: str = "You are a helpful assistant.") -> str:
-    messages = [
+    input_messages = [
         {"type": "message", "role": "system", "content": system_prompt},
         {"type": "message", "role": "user", "content": user_message},
     ]
@@ -111,17 +111,27 @@ def run_agent(user_message: str, system_prompt: str = "You are a helpful assista
     while True:
         response = client.responses.create(
             model="openai/gpt-4o",
-            input=messages,
+            input=input_messages,
             tools=tools,
         )
-        output = response.output[0]
+        assistant_msg = response.output[0]
 
-        if output.type != "function_call":
-            return output.content
+        # Check if the model wants to call a tool
+        tool_calls = [block for block in assistant_msg.content if block.type == "tool_use"]
 
-        result = execute_tool(output.name, json.loads(output.arguments))
-        messages.append({"type": "function_call", "name": output.name, "arguments": output.arguments, "call_id": output.call_id})
-        messages.append({"type": "function_call_output", "call_id": output.call_id, "output": result})
+        if not tool_calls:
+            # No tool calls — extract text response
+            text_blocks = [block for block in assistant_msg.content if block.type == "text"]
+            return text_blocks[0].text if text_blocks else ""
+
+        # Process each tool call and send results back
+        for tool_call in tool_calls:
+            result = execute_tool(tool_call.name, tool_call.input or {})
+            input_messages.append({
+                "type": "tool_result",
+                "tool_use_id": tool_call.id,
+                "content": result,
+            })
 
 if __name__ == "__main__":
     response = run_agent("Your test prompt here")
@@ -178,7 +188,7 @@ function executeTool(name: string, args: Record<string, unknown>): string {
 // --- Agent loop ---
 
 async function runAgent(userMessage: string, systemPrompt = "You are a helpful assistant."): Promise<string> {
-  const messages: any[] = [
+  const inputMessages: any[] = [
     { type: "message", role: "system", content: systemPrompt },
     { type: "message", role: "user", content: userMessage },
   ];
@@ -186,18 +196,29 @@ async function runAgent(userMessage: string, systemPrompt = "You are a helpful a
   while (true) {
     const response = await client.responses.create({
       model: "openai/gpt-4o",
-      input: messages,
+      input: inputMessages,
       tools,
     });
-    const output = response.output[0];
+    const assistantMsg = response.output[0];
 
-    if (output.type !== "function_call") {
-      return output.content ?? "";
+    // Check if the model wants to call a tool
+    const toolCalls = assistantMsg.content.filter((block: any) => block.type === "tool_use");
+
+    if (toolCalls.length === 0) {
+      // No tool calls — extract text response
+      const textBlocks = assistantMsg.content.filter((block: any) => block.type === "text");
+      return textBlocks[0]?.text ?? "";
     }
 
-    messages.push({ type: "function_call", name: output.name, arguments: output.arguments, call_id: output.call_id });
-    const result = executeTool(output.name, JSON.parse(output.arguments));
-    messages.push({ type: "function_call_output", call_id: output.call_id, output: result });
+    // Process each tool call and send results back
+    for (const toolCall of toolCalls) {
+      const result = executeTool(toolCall.name, toolCall.input ?? {});
+      inputMessages.push({
+        type: "tool_result",
+        tool_use_id: toolCall.id,
+        content: result,
+      });
+    }
   }
 }
 

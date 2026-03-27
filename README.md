@@ -36,6 +36,11 @@ After installing, open Claude Code and try one of these:
 /merge-gateway:build-agent
 ```
 
+### Explore advanced Gateway features
+```
+/merge-gateway:gateway-features
+```
+
 ### Migrate from another provider
 ```
 /merge-gateway:migrate-openrouter
@@ -51,6 +56,7 @@ Or just describe what you want — Claude will pick the right skill:
 - "Build a tool-use agent that can search the web"
 - "Migrate this project from OpenRouter to Merge Gateway"
 - "Switch from Bedrock to Merge Gateway"
+- "Show me Gateway's advanced features like tags and routing"
 
 ## Available Skills
 
@@ -60,6 +66,12 @@ Or just describe what you want — Claude will pick the right skill:
 |-------|---------|-------------|
 | **Gateway Implementation** | `/gateway-implement` | Detect your stack, install the SDK, and verify the integration |
 | **Build a Tool-Use Agent** | `/build-agent` | Scaffold an agent with tool definitions and an execution loop |
+
+### Advanced Features
+
+| Skill | Command | What it does |
+|-------|---------|-------------|
+| **Gateway Features** | `/gateway-features` | Explore tags, project tracking, routing metadata, multi-model routing, extended thinking, and more |
 
 ### Migration
 

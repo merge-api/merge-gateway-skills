@@ -219,7 +219,71 @@ response = client.embeddings.create(model="openai/text-embedding-3-small", input
 embedding = response.data[0].embedding
 ```
 
+**Streaming:**
+
+The Gateway SDK supports streaming responses. The stream yields raw JSON event dicts via Server-Sent Events:
+
+```python
+# Streaming response
+response = client.responses.create(
+    model="openai/gpt-4o",
+    input=[{"type": "message", "role": "user", "content": "Tell me a story."}],
+    stream=True,
+)
+
+# Use as context manager to ensure cleanup
+with response as stream:
+    for event in stream:
+        # Each event is a dict — structure varies by event type
+        # Common pattern: check for text content
+        if "delta" in event:
+            print(event["delta"].get("text", ""), end="", flush=True)
+print()  # Final newline
+```
+
+> **Note:** Stream events are raw dicts, not typed objects. The event structure follows the SSE format from the API. The stream terminates automatically when complete.
+
 Ask the user if they want to run the test script.
+
+### 8. Error Handling
+
+Show the user how to handle common Gateway errors. The SDK provides typed exceptions for each error case:
+
+```python
+from merge_gateway import MergeGateway, AuthenticationError, BadRequestError, RateLimitError, APIError
+
+client = MergeGateway(
+    api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+)
+
+try:
+    response = client.responses.create(
+        model="openai/gpt-4o",
+        input=[{"type": "message", "role": "user", "content": "Hello!"}],
+    )
+    print(response.output[0].content[0].text)
+except AuthenticationError:
+    print("Invalid API key. Check MERGE_GATEWAY_API_KEY.")
+except BadRequestError as e:
+    print(f"Bad request: {e.message}")
+except RateLimitError:
+    print("Rate limit hit. Back off and retry.")
+except APIError as e:
+    # Catches all other API errors (including 402 budget exceeded)
+    print(f"API error {e.status_code}: {e.message}")
+```
+
+**Common error codes:**
+| Status | Exception | Meaning |
+|---|---|---|
+| 400 | `BadRequestError` | Invalid request format or parameters |
+| 401 | `AuthenticationError` | Invalid or missing API key |
+| 402 | `APIError` (status_code=402) | Free tier budget exhausted — upgrade to Pro |
+| 404 | `NotFoundError` | Model or endpoint not found |
+| 429 | `RateLimitError` | Too many requests — implement backoff |
+
+All exceptions inherit from `MergeGatewayError` and have `.message`, `.status_code`, and `.body` attributes.
 
 ## Cross-Cutting Rules
 
