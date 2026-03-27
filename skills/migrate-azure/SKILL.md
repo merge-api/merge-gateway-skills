@@ -7,6 +7,10 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 
 Migrate from the Azure OpenAI SDK to the Merge Gateway SDK.
 
+## Language Support
+
+**The Python SDK (`merge-gateway-sdk`) is the default and primary Gateway SDK.** Always prefer Python examples and migration paths. The TypeScript/Node SDK is **coming soon** and not yet published. TypeScript examples are included below for reference and future use only.
+
 ## Steps
 
 ### 1. Search for Azure OpenAI Usage
@@ -64,7 +68,7 @@ client = MergeGateway(
 )
 ```
 
-TypeScript:
+TypeScript (coming soon — SDK not yet published):
 ```typescript
 // Before
 import { AzureOpenAI } from "openai";
@@ -179,7 +183,7 @@ response = client.responses.create(
 print(response.output[0].content[0].text)
 ```
 
-TypeScript (`test_gateway.ts`):
+TypeScript (`test_gateway.ts`) — coming soon, SDK not yet published:
 ```typescript
 import { MergeGateway } from "merge-gateway-sdk";
 
@@ -199,10 +203,23 @@ async function main() {
 main();
 ```
 
+**Embeddings migration:**
+
+Azure embeddings migrate the same way — just prefix the model name:
+
+```python
+# Before (Azure)
+response = client.embeddings.create(model="text-embedding-ada-002", input="Hello")
+
+# After (Merge Gateway)
+response = client.embeddings.create(model="openai/text-embedding-ada-002", input="Hello")
+# Response format is the same: response.data[0].embedding
+```
+
 ## Cross-Cutting Rules
 
 - **Never delete old configuration** — comment out old env vars with a note about the replacement.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **Merge Gateway SDK base URL** — Always append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
+- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
 - **Azure deployment names are opaque** — Always ask the user to confirm what model each deployment maps to.

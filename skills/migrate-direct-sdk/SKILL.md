@@ -7,6 +7,10 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 
 Migrate from calling OpenAI, Anthropic, or Google directly to routing through Merge Gateway.
 
+## Language Support
+
+**The Python SDK (`merge-gateway-sdk`) is the default and primary Gateway SDK.** Always prefer Python examples and migration paths. The TypeScript/Node SDK is **coming soon** and not yet published. TypeScript examples are included below for reference and future use only.
+
 ## Steps
 
 ### 1. Search for Direct Provider SDK Usage
@@ -56,7 +60,7 @@ client = MergeGateway(
 )
 ```
 
-TypeScript:
+TypeScript (coming soon — SDK not yet published):
 ```typescript
 // Before
 import OpenAI from "openai";
@@ -97,7 +101,7 @@ client = MergeGateway(
 )
 ```
 
-TypeScript:
+TypeScript (coming soon — SDK not yet published):
 ```typescript
 // Before
 import Anthropic from "@anthropic-ai/sdk";
@@ -145,7 +149,7 @@ response = client.responses.create(
 print(response.output[0].content[0].text)
 ```
 
-TypeScript:
+TypeScript (coming soon — SDK not yet published):
 ```typescript
 // Before
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -178,7 +182,21 @@ Google model name mapping:
 - `chat.send_message("text")` → append to input array and call `client.responses.create()`
 - Multi-turn: maintain an `input` array instead of using `model.start_chat()`
 
-After migration, the `google-generativeai` / `@google/generative-ai` dependency can be removed if it's no longer used elsewhere. Install `merge-gateway` (Python) or `merge-gateway-sdk` (TypeScript) if not already present.
+After migration, the `google-generativeai` / `@google/generative-ai` dependency can be removed if it's no longer used elsewhere. Install `merge-gateway-sdk` (Python: `pip install merge-gateway-sdk`) if not already present.
+
+**Embeddings migration:**
+
+When migrating OpenAI embeddings, the response format is preserved:
+
+```python
+# Before (OpenAI)
+response = client.embeddings.create(model="text-embedding-3-small", input="Hello")
+embedding = response.data[0].embedding
+
+# After (Merge Gateway)
+response = client.embeddings.create(model="openai/text-embedding-3-small", input="Hello")
+embedding = response.data[0].embedding  # Same response format
+```
 
 ### 4. Consolidate Environment Variables
 
@@ -225,6 +243,6 @@ print(response.output[0].content[0].text)
 - **Never delete old configuration** — comment out old env vars with a note about the replacement.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **Merge Gateway SDK base URL** — Append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
+- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
 - **Anthropic SDK compatibility** — If keeping Anthropic SDK as alternative, do NOT append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"]`.
-- **Both languages** — Support Python and TypeScript/Node.js patterns.
+- **Python is the default** — The Python SDK is the primary Gateway SDK. TypeScript SDK is coming soon. Always prefer Python migration paths.

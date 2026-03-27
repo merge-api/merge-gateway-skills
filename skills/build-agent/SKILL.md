@@ -7,11 +7,21 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 
 Scaffold a function-calling agent loop using the Merge Gateway SDK.
 
+## Language Support
+
+**The Python SDK (`merge-gateway-sdk`) is the default and primary Gateway SDK.** Always prefer Python when scaffolding agents. The TypeScript/Node SDK is **coming soon** and not yet published. TypeScript examples are included below for reference and future use only.
+
 ## Steps
 
 ### 1. Gather Requirements
 
-Ask the user:
+If the user wants a quick start, skip the questions and scaffold with these defaults:
+- **Agent purpose:** General-purpose assistant
+- **Tools:** One example tool (stub with TODO)
+- **Model:** `openai/gpt-4o`
+- **System prompt:** `"You are a helpful assistant."`
+
+Otherwise, ask the user:
 - **Agent purpose** — What should the agent do? (e.g., "research assistant", "data analyst", "customer support bot")
 - **Tools needed** — What functions should the agent be able to call? (e.g., "search the web", "query a database", "read files")
 - **Model preference** — Default: `openai/gpt-4o`. Other options: `anthropic/claude-sonnet-4-20250514`, `openai/gpt-4o-mini`
@@ -26,12 +36,12 @@ If both are present, ask the user which they prefer.
 
 ### 3. Install the Merge Gateway SDK
 
-Python:
+Python (default):
 ```bash
 pip install merge-gateway-sdk
 ```
 
-TypeScript/Node:
+TypeScript/Node (coming soon — SDK not yet published):
 ```bash
 npm install merge-gateway-sdk
 ```
@@ -118,7 +128,7 @@ if __name__ == "__main__":
     print(response)
 ```
 
-**TypeScript agent (`agent.ts`):**
+**TypeScript agent (`agent.ts`) — coming soon, SDK not yet published:**
 
 ```typescript
 import { MergeGateway } from "merge-gateway-sdk";
@@ -219,4 +229,4 @@ When explaining the setup to the user, mention:
 
 - **Provider-prefixed models** — ALL model names must use `provider/model` format (e.g., `openai/gpt-4o`, not `gpt-4o`).
 - **Env vars** — Always use `MERGE_GATEWAY_API_KEY` and `MERGE_GATEWAY_BASE_URL` environment variables, never hardcoded values.
-- **Base URL** — Always append `/v1` to the base URL.
+- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.

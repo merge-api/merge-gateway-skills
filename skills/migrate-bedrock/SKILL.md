@@ -7,6 +7,10 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 
 Migrate from boto3 Bedrock calls to the Merge Gateway SDK. This is a significant API change — the request/response format changes entirely.
 
+## Language Support
+
+**The Python SDK (`merge-gateway-sdk`) is the default and primary Gateway SDK.** Bedrock migrations are Python-only (boto3 is a Python library). The TypeScript/Node SDK is **coming soon** and not yet published.
+
 ## Steps
 
 ### 1. Search for Bedrock Usage
@@ -35,17 +39,18 @@ Check if `merge-gateway-sdk` is already in the project's dependencies. If not, a
 
 Bedrock uses its own model ID format. Map them to Gateway's `provider/model` format:
 
-| Bedrock Model ID | Gateway Model Name |
-|---|---|
-| `anthropic.claude-3-5-sonnet-20241022-v2:0` | `anthropic/claude-sonnet-4-20250514` |
-| `anthropic.claude-3-haiku-20240307-v1:0` | `anthropic/claude-3-5-haiku-20241022` |
-| `anthropic.claude-3-opus-20240229-v1:0` | `anthropic/claude-3-opus-20240229` |
-| `meta.llama3-1-70b-instruct-v1:0` | `meta-llama/llama-3.1-70b-instruct` |
-| `meta.llama3-1-8b-instruct-v1:0` | `meta-llama/llama-3.1-8b-instruct` |
-| `amazon.titan-text-express-v1` | Ask user — may not have Gateway equivalent |
-| `cohere.command-r-plus-v1:0` | `cohere/command-r-plus` |
+| Bedrock Model ID | Gateway Model Name (1:1) | Latest Upgrade (optional) |
+|---|---|---|
+| `anthropic.claude-3-5-sonnet-20241022-v2:0` | `anthropic/claude-3-5-sonnet-20241022` | `anthropic/claude-sonnet-4-20250514` |
+| `anthropic.claude-3-sonnet-20240229-v1:0` | `anthropic/claude-3-sonnet-20240229` | `anthropic/claude-sonnet-4-20250514` |
+| `anthropic.claude-3-haiku-20240307-v1:0` | `anthropic/claude-3-haiku-20240307` | `anthropic/claude-3-5-haiku-20241022` |
+| `anthropic.claude-3-opus-20240229-v1:0` | `anthropic/claude-3-opus-20240229` | — |
+| `meta.llama3-1-70b-instruct-v1:0` | `meta-llama/llama-3.1-70b-instruct` | — |
+| `meta.llama3-1-8b-instruct-v1:0` | `meta-llama/llama-3.1-8b-instruct` | — |
+| `amazon.titan-text-express-v1` | Ask user — may not have Gateway equivalent | — |
+| `cohere.command-r-plus-v1:0` | `cohere/command-r-plus` | — |
 
-Ask the user to confirm mappings, especially for less common models.
+**IMPORTANT:** Default to the 1:1 mapping column to preserve existing behavior. Only suggest the "Latest Upgrade" column as an optional follow-up — do not silently upgrade models during migration. Ask the user to confirm mappings, especially for less common models.
 
 ### 5. Migrate `invoke_model` Calls
 
@@ -225,5 +230,5 @@ print(response.output[0].content[0].text)
 - **Never delete old configuration** — comment out old env vars with a note about the replacement.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **Merge Gateway SDK base URL** — Always append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
+- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
 - **Ask before removing boto3** — It may be used for other AWS services beyond Bedrock.
