@@ -27,7 +27,7 @@ Report all findings to the user before making changes.
 
 ### 2. Check for Prior Migration
 
-Check if `MERGE_GATEWAY` or `gateway.merge.dev` already exists in the project. If so, report which parts are already migrated and skip those.
+Check if `MERGE_GATEWAY` or `api-gateway.merge.dev` already exists in the project. If so, report which parts are already migrated and skip those.
 
 ### 3. Determine Migration Path
 
@@ -123,7 +123,7 @@ response = client.responses.create(
     model="openai/gpt-4o",
     input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
-print(response.output[0].content)
+print(response.output[0].content[0].text)
 ```
 
 **Async migration:**
@@ -147,7 +147,7 @@ client = AsyncMergeGateway(
 
 response = await client.responses.create(
     model="openai/gpt-4o",
-    input=[{"type": "message", "role": "user", "content": msg} for msg in messages],
+    input=[{"type": "message", "role": msg["role"], "content": msg["content"]} for msg in messages],
 )
 ```
 
@@ -165,7 +165,7 @@ for chunk in response:
 # After
 response = client.responses.create(
     model="openai/gpt-4o",
-    input=[{"type": "message", "role": "user", "content": msg} for msg in messages],
+    input=[{"type": "message", "role": msg["role"], "content": msg["content"]} for msg in messages],
     stream=True,
 )
 for event in response:
@@ -178,7 +178,7 @@ for event in response:
 response = litellm.embedding(model="openai/text-embedding-ada-002", input=["Hello"])
 
 # After
-response = client.responses.create(model="openai/text-embedding-ada-002", input=["Hello"])
+response = client.embeddings.create(model="openai/text-embedding-ada-002", input=["Hello"])
 ```
 
 ### 5. Remove LiteLLM-Specific Configuration
@@ -202,7 +202,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 # After
 MERGE_GATEWAY_API_KEY=mg_your_api_key_here
-MERGE_GATEWAY_BASE_URL=https://gateway.merge.dev
+MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 # LITELLM_API_KEY=sk-...              # Replaced by MERGE_GATEWAY_API_KEY
 # LITELLM_BASE_URL=http://localhost:4000  # Replaced by MERGE_GATEWAY_BASE_URL
 # OPENAI_API_KEY=sk-...               # No longer needed — Gateway manages provider keys
@@ -252,7 +252,7 @@ response = client.responses.create(
     model="openai/gpt-4o",
     input=[{"type": "message", "role": "user", "content": "Say 'LiteLLM migration successful!' and nothing else."}],
 )
-print(response.output[0].content)
+print(response.output[0].content[0].text)
 ```
 
 ## Cross-Cutting Rules

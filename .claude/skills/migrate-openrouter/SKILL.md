@@ -18,7 +18,7 @@ Report all findings to the user before making changes.
 
 ### 2. Check for Prior Migration
 
-Before making changes, check if `MERGE_GATEWAY` or `gateway.merge.dev` already exists in the project. If so, report which parts are already migrated and skip those.
+Before making changes, check if `MERGE_GATEWAY` or `api-gateway.merge.dev` already exists in the project. If so, report which parts are already migrated and skip those.
 
 ### 3. Migrate URLs
 
@@ -91,7 +91,7 @@ response = client.chat.completions.create(
 # After
 response = client.responses.create(
     model="openai/gpt-4o",
-    input=[{"type": "message", "role": "user", "content": msg} for msg in messages],
+    input=[{"type": "message", "role": msg["role"], "content": msg["content"]} for msg in messages],
 )
 ```
 
@@ -132,7 +132,7 @@ OPENROUTER_API_KEY=sk-or-v1-...
 
 # After
 MERGE_GATEWAY_API_KEY=mg_your_api_key_here
-MERGE_GATEWAY_BASE_URL=https://gateway.merge.dev
+MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 # OPENROUTER_API_KEY=sk-or-v1-...  # Replaced by MERGE_GATEWAY_API_KEY
 ```
 
@@ -156,7 +156,7 @@ response = client.responses.create(
     model="openai/gpt-4o",
     input=[{"type": "message", "role": "user", "content": "Say 'Migration successful!' and nothing else."}],
 )
-print(response.output[0].content)
+print(response.output[0].content[0].text)
 ```
 
 TypeScript (`test_gateway.ts`):
@@ -173,7 +173,7 @@ async function main() {
     model: "openai/gpt-4o",
     input: [{ type: "message", role: "user", content: "Say 'Migration successful!' and nothing else." }],
   });
-  console.log(response.output[0].content);
+  console.log(response.output[0].content[0].text);
 }
 
 main();

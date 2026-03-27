@@ -18,7 +18,7 @@ Report all findings to the user before making changes.
 
 ### 2. Check for Prior Migration
 
-Check if `MERGE_GATEWAY` or `gateway.merge.dev` already exists in the project. If so, report which parts are already migrated and skip those.
+Check if `MERGE_GATEWAY` or `api-gateway.merge.dev` already exists in the project. If so, report which parts are already migrated and skip those.
 
 ### 3. Map Azure Deployments to Gateway Model Names
 
@@ -144,7 +144,7 @@ AZURE_OPENAI_DEPLOYMENT=my-gpt4o-deployment
 
 # After
 MERGE_GATEWAY_API_KEY=mg_your_api_key_here
-MERGE_GATEWAY_BASE_URL=https://gateway.merge.dev
+MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 # AZURE_OPENAI_API_KEY=...                               # Replaced by MERGE_GATEWAY_API_KEY
 # AZURE_OPENAI_ENDPOINT=https://my-resource.openai.azure.com  # Replaced by MERGE_GATEWAY_BASE_URL
 # AZURE_OPENAI_API_VERSION=2024-02-01                    # Not needed with Gateway
@@ -171,7 +171,7 @@ response = client.responses.create(
     model="openai/gpt-4o",
     input=[{"type": "message", "role": "user", "content": "Say 'Azure migration successful!' and nothing else."}],
 )
-print(response.output[0].content)
+print(response.output[0].content[0].text)
 ```
 
 TypeScript (`test_gateway.ts`):
@@ -188,7 +188,7 @@ async function main() {
     model: "openai/gpt-4o",
     input: [{ type: "message", role: "user", content: "Say 'Azure migration successful!' and nothing else." }],
   });
-  console.log(response.output[0].content);
+  console.log(response.output[0].content[0].text);
 }
 
 main();
