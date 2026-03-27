@@ -1,0 +1,12 @@
+{
+  "name": "merge-gateway",
+  "version": "1.0.0",
+  "description": "Claude Code skills for integrating with, building on, and migrating to Merge Gateway",
+  "author": {
+    "name": "Merge",
+    "email": "support@merge.dev"
+  },
+  "homepage": "https://github.com/merge-api/merge-gateway-skills",
+  "repository": "https://github.com/merge-api/merge-gateway-skills",
+  "license": "MIT"
+}
