@@ -13,7 +13,8 @@ Migrate from calling OpenAI, Anthropic, or Google directly to routing through Me
 ## Install
 
 ```bash
-claude install-skill https://github.com/merge-api/merge-gateway-skills
+claude plugin marketplace add merge-api/merge-gateway-skills
+claude plugin install merge-gateway
 ```
 
 ## Usage

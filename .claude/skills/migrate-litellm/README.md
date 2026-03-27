@@ -14,7 +14,8 @@ Replace a self-hosted LiteLLM proxy or the LiteLLM Python library with managed M
 ## Install
 
 ```bash
-claude install-skill https://github.com/merge-api/merge-gateway-skills
+claude plugin marketplace add merge-api/merge-gateway-skills
+claude plugin install merge-gateway
 ```
 
 ## Usage

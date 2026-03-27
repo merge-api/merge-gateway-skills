@@ -14,7 +14,8 @@ Add Merge Gateway to an existing project. This skill detects your stack, install
 ## Install
 
 ```bash
-claude install-skill https://github.com/merge-api/merge-gateway-skills
+claude plugin marketplace add merge-api/merge-gateway-skills
+claude plugin install merge-gateway
 ```
 
 ## Usage
