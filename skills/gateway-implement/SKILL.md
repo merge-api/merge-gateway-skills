@@ -1,8 +1,3 @@
----
-description: Add Merge Gateway to an existing project. Use when the user wants to integrate, set up, or add Gateway to their codebase.
-allowed-tools: Read, Grep, Glob, Edit, Write, Bash
----
-
 # Integrate Merge Gateway
 
 Guide a developer through adding Merge Gateway to an existing project. Detect their stack, install the Merge Gateway SDK, update configuration, and verify the integration works.
@@ -21,11 +16,15 @@ Search for existing LLM client constructors:
 
 Report what you found to the user before proceeding.
 
-### 2. Ask for Credentials
+### 2. Set Up Credentials
 
-Ask the user for:
-- **Gateway API key** (`mg_...`) — or ask if they want to use an env var (default: `MERGE_GATEWAY_API_KEY`)
-- **Gateway base URL** — default: `https://api-gateway.merge.dev`
+Check if `MERGE_GATEWAY_API_KEY` is already set in the environment or `.env` file. If it is, confirm with the user and move on.
+
+If not, direct the user to create one:
+- Go to the **Get Started** page on the [Gateway dashboard](https://app.merge.dev/get-started) and complete the API key step
+- Copy the key and add it to their `.env` file as `MERGE_GATEWAY_API_KEY`
+
+**Gateway base URL** — default: `https://api-gateway.merge.dev`
 
 ### 3. Install the Merge Gateway SDK
 
@@ -40,8 +39,6 @@ npm install merge-gateway-sdk
 ```
 
 ### 4. Update SDK Configuration
-
-**Primary path — Merge Gateway SDK:**
 
 Replace existing LLM client constructors with the Merge Gateway SDK:
 
@@ -132,32 +129,6 @@ Update model names to provider-prefixed format:
 - `claude-3-5-haiku-20241022` → `anthropic/claude-3-5-haiku-20241022`
 - `gemini-2.0-flash` → `google/gemini-2.0-flash`
 
-**Alternative — OpenAI SDK compatibility (for codebases that prefer minimal changes):**
-
-If the user prefers to keep the OpenAI SDK, they can point it at Gateway instead:
-
-Python:
-```python
-from openai import OpenAI
-
-client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1/openai",
-    api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-)
-```
-
-TypeScript:
-```typescript
-import OpenAI from "openai";
-
-const client = new OpenAI({
-  baseURL: process.env.MERGE_GATEWAY_BASE_URL + "/v1/openai",
-  apiKey: process.env.MERGE_GATEWAY_API_KEY,
-});
-```
-
-This uses the standard `chat.completions.create()` API but still routes through Gateway. Model names must still use the `provider/model` format.
-
 ### 5. Detect Centralized Config
 
 Before making scattered changes, search for centralized configuration patterns:
@@ -234,5 +205,4 @@ Ask the user if they want to run the test script.
 - **Idempotency** — Before making changes, check if `MERGE_GATEWAY_BASE_URL` or `api-gateway.merge.dev` is already present. If so, skip those files and tell the user.
 - **Both languages** — Support Python and TypeScript/Node.js patterns. Detect which is in use from the project.
 - **Provider-prefixed models** — ALL model names must use the `provider/model` format when going through Gateway.
-- **Base URL (Merge Gateway SDK)** — Append `/v1` to the base URL: `MERGE_GATEWAY_BASE_URL + "/v1"`.
-- **Base URL (OpenAI SDK alternative)** — Append `/v1/openai` to the base URL: `MERGE_GATEWAY_BASE_URL + "/v1/openai"`.
+- **Base URL** — Append `/v1` to the base URL: `MERGE_GATEWAY_BASE_URL + "/v1"`.
