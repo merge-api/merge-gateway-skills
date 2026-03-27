@@ -20,13 +20,13 @@ Report what you found to the user before proceeding.
 
 Ask the user for:
 - **Gateway API key** (`mg_...`) — or ask if they want to use an env var (default: `MERGE_GATEWAY_API_KEY`)
-- **Gateway base URL** — default: `https://gateway.merge.dev`
+- **Gateway base URL** — default: `https://api-gateway.merge.dev`
 
 ### 3. Install the Merge Gateway SDK
 
 Python:
 ```bash
-pip install merge-gateway
+pip install merge-gateway-sdk
 ```
 
 TypeScript/Node:
@@ -92,7 +92,7 @@ response = client.responses.create(
         {"type": "message", "role": "user", "content": "Hello!"},
     ],
 )
-print(response.output[0].content)
+print(response.output[0].content[0].text)
 ```
 
 TypeScript:
@@ -115,7 +115,7 @@ const response = await client.responses.create({
     { type: "message", role: "user", content: "Hello!" },
   ],
 });
-console.log(response.output[0].content);
+console.log(response.output[0].content[0].text);
 ```
 
 Update model names to provider-prefixed format:
@@ -136,7 +136,7 @@ Python:
 from openai import OpenAI
 
 client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1/openai",
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
 )
 ```
@@ -146,7 +146,7 @@ TypeScript:
 import OpenAI from "openai";
 
 const client = new OpenAI({
-  baseURL: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
+  baseURL: process.env.MERGE_GATEWAY_BASE_URL + "/v1/openai",
   apiKey: process.env.MERGE_GATEWAY_API_KEY,
 });
 ```
@@ -166,7 +166,7 @@ If a centralized config exists, update the Gateway settings there and have call 
 Create or update `.env` (and `.env.example` if it exists):
 ```
 MERGE_GATEWAY_API_KEY=mg_your_api_key_here
-MERGE_GATEWAY_BASE_URL=https://gateway.merge.dev
+MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 ```
 
 Check `.gitignore` includes `.env`. If not, warn the user.
@@ -196,7 +196,7 @@ response = client.responses.create(
         {"type": "message", "role": "user", "content": "Say 'Gateway integration successful!' and nothing else."},
     ],
 )
-print(response.output[0].content)
+print(response.output[0].content[0].text)
 ```
 
 TypeScript (`test_gateway.ts`):
@@ -215,7 +215,7 @@ async function main() {
       { type: "message", role: "user", content: "Say 'Gateway integration successful!' and nothing else." },
     ],
   });
-  console.log(response.output[0].content);
+  console.log(response.output[0].content[0].text);
 }
 
 main();
@@ -226,7 +226,8 @@ Ask the user if they want to run the test script.
 ## Cross-Cutting Rules
 
 - **Never delete old configuration** — comment it out with a note about the replacement.
-- **Idempotency** — Before making changes, check if `MERGE_GATEWAY_BASE_URL` or `gateway.merge.dev` is already present. If so, skip those files and tell the user.
+- **Idempotency** — Before making changes, check if `MERGE_GATEWAY_BASE_URL` or `api-gateway.merge.dev` is already present. If so, skip those files and tell the user.
 - **Both languages** — Support Python and TypeScript/Node.js patterns. Detect which is in use from the project.
 - **Provider-prefixed models** — ALL model names must use the `provider/model` format when going through Gateway.
-- **Base URL** — Always append `/v1` to the base URL for the Merge Gateway SDK.
+- **Base URL (Merge Gateway SDK)** — Append `/v1` to the base URL: `MERGE_GATEWAY_BASE_URL + "/v1"`.
+- **Base URL (OpenAI SDK alternative)** — Append `/v1/openai` to the base URL: `MERGE_GATEWAY_BASE_URL + "/v1/openai"`.

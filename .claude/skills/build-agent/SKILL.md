@@ -23,7 +23,7 @@ If both are present, ask the user which they prefer.
 
 Python:
 ```bash
-pip install merge-gateway
+pip install merge-gateway-sdk
 ```
 
 TypeScript/Node:
@@ -142,11 +142,11 @@ const tools = [
 
 // --- Tool implementations ---
 
-function toolName(param1: string): Record<string, unknown> {
-  return { result: `Processed: ${param1}` };
+function toolName(args: { param1: string }): Record<string, unknown> {
+  return { result: `Processed: ${args.param1}` };
 }
 
-const TOOL_REGISTRY: Record<string, (...args: any[]) => Record<string, unknown>> = {
+const TOOL_REGISTRY: Record<string, (args: Record<string, unknown>) => Record<string, unknown>> = {
   tool_name: toolName,
 };
 

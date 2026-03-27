@@ -27,9 +27,13 @@ Report all findings to the user before making changes.
 
 ### 2. Check for Prior Migration
 
-Before making changes, check if `MERGE_GATEWAY` or `gateway.merge.dev` already exists in the project. If so, report which parts are already migrated and skip those.
+Before making changes, check if `MERGE_GATEWAY` or `api-gateway.merge.dev` already exists in the project. If so, report which parts are already migrated and skip those.
 
-### 3. Migrate OpenAI SDK (Simplest Path)
+### 3. Migrate Each Detected Provider
+
+For each provider detected in step 1, apply the corresponding migration below. If multiple providers are detected, apply each subsection in order.
+
+#### 3A. Migrate OpenAI SDK (Simplest Path)
 
 This is the simplest migration — swap to the Merge Gateway SDK.
 
@@ -70,7 +74,7 @@ Prefix all model names:
 - `o1-mini` → `openai/o1-mini`
 - `o3-mini` → `openai/o3-mini`
 
-### 4. Migrate Anthropic SDK
+#### 3B. Migrate Anthropic SDK
 
 Replace the Anthropic SDK with the Merge Gateway SDK. **Note:** You can alternatively keep the Anthropic SDK and point it at Gateway (without `/v1`), but the Merge Gateway SDK is the primary recommended approach.
 
@@ -107,7 +111,7 @@ Prefix all model names:
 - `claude-3-5-haiku-20241022` → `anthropic/claude-3-5-haiku-20241022`
 - `claude-3-opus-20240229` → `anthropic/claude-3-opus-20240229`
 
-### 5. Migrate Google Generative AI (Bigger Refactor)
+#### 3C. Migrate Google Generative AI (Bigger Refactor)
 
 Google's SDK has a different API shape — this requires switching to the Merge Gateway SDK.
 
@@ -133,7 +137,7 @@ response = client.responses.create(
     model="google/gemini-2.0-flash",
     input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
-print(response.output[0].content)
+print(response.output[0].content[0].text)
 ```
 
 TypeScript:
@@ -155,7 +159,7 @@ const response = await client.responses.create({
   model: "google/gemini-2.0-flash",
   input: [{ type: "message", role: "user", content: "Hello!" }],
 });
-console.log(response.output[0].content);
+console.log(response.output[0].content[0].text);
 ```
 
 Google model name mapping:
@@ -171,7 +175,7 @@ Google model name mapping:
 
 After migration, the `google-generativeai` / `@google/generative-ai` dependency can be removed if it's no longer used elsewhere. Install `merge-gateway` (Python) or `merge-gateway-sdk` (TypeScript) if not already present.
 
-### 6. Consolidate Environment Variables
+### 4. Consolidate Environment Variables
 
 Replace multiple provider keys with a single Gateway key:
 
@@ -183,7 +187,7 @@ GOOGLE_API_KEY=AI...
 
 # After
 MERGE_GATEWAY_API_KEY=mg_your_api_key_here
-MERGE_GATEWAY_BASE_URL=https://gateway.merge.dev
+MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 # OPENAI_API_KEY=sk-...          # Replaced by MERGE_GATEWAY_API_KEY
 # ANTHROPIC_API_KEY=sk-ant-...   # Replaced by MERGE_GATEWAY_API_KEY
 # GOOGLE_API_KEY=AI...           # Replaced by MERGE_GATEWAY_API_KEY
@@ -191,7 +195,7 @@ MERGE_GATEWAY_BASE_URL=https://gateway.merge.dev
 
 Comment out (do NOT delete) old provider env vars.
 
-### 7. Verify
+### 5. Verify
 
 Generate a test script matching the SDK(s) that were migrated:
 
@@ -208,7 +212,7 @@ response = client.responses.create(
     model="openai/gpt-4o",
     input=[{"type": "message", "role": "user", "content": "Say 'Migration successful!' and nothing else."}],
 )
-print(response.output[0].content)
+print(response.output[0].content[0].text)
 ```
 
 ## Cross-Cutting Rules

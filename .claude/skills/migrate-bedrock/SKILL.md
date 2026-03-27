@@ -18,9 +18,15 @@ Report all findings to the user before making changes.
 
 ### 2. Check for Prior Migration
 
-Check if `MERGE_GATEWAY` or `gateway.merge.dev` already exists in the project. If so, report which parts are already migrated and skip those.
+Check if `MERGE_GATEWAY` or `api-gateway.merge.dev` already exists in the project. If so, report which parts are already migrated and skip those.
 
-### 3. Map Bedrock Model IDs to Gateway Format
+### 3. Install Merge Gateway SDK
+
+Check if `merge-gateway` is already in the project's dependencies. If not, add it:
+- Python: add `merge-gateway` to `requirements.txt` or `pyproject.toml`
+- Inform the user to run `pip install merge-gateway-sdk` or `poetry add merge-gateway-sdk`
+
+### 4. Map Bedrock Model IDs to Gateway Format
 
 Bedrock uses its own model ID format. Map them to Gateway's `provider/model` format:
 
@@ -36,7 +42,7 @@ Bedrock uses its own model ID format. Map them to Gateway's `provider/model` for
 
 Ask the user to confirm mappings, especially for less common models.
 
-### 4. Migrate `invoke_model` Calls
+### 5. Migrate `invoke_model` Calls
 
 The `invoke_model` API uses raw JSON bodies specific to each provider. Replace with Merge Gateway SDK calls.
 
@@ -72,7 +78,7 @@ response = client.responses.create(
     model="anthropic/claude-sonnet-4-20250514",
     input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
-print(response.output[0].content)
+print(response.output[0].content[0].text)
 ```
 
 **Meta Llama models via Bedrock:**
@@ -94,10 +100,10 @@ response = client.responses.create(
     model="meta-llama/llama-3.1-70b-instruct",
     input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
-print(response.output[0].content)
+print(response.output[0].content[0].text)
 ```
 
-### 5. Migrate `converse` / `converse_stream` Calls
+### 6. Migrate `converse` / `converse_stream` Calls
 
 The Bedrock Converse API has its own message format. Convert to Merge Gateway SDK format.
 
@@ -120,7 +126,7 @@ response = client.responses.create(
     model="anthropic/claude-sonnet-4-20250514",
     input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
-print(response.output[0].content)
+print(response.output[0].content[0].text)
 ```
 
 **Message format mapping:**
@@ -130,7 +136,7 @@ print(response.output[0].content)
 - Bedrock `inferenceConfig.topP` → Merge Gateway parameter
 - Bedrock `system` → Merge Gateway `input` with `role: "system"`
 
-### 6. Migrate Streaming
+### 7. Migrate Streaming
 
 ```python
 # Before
@@ -173,12 +179,6 @@ for event in response:
     print(event, end="")
 ```
 
-### 7. Install Merge Gateway SDK
-
-If not already present, add `merge-gateway` to the project's dependencies:
-- Python: add to `requirements.txt` or `pyproject.toml`
-- Inform the user to run `pip install merge-gateway` or `poetry add merge-gateway`
-
 ### 8. Clean Up AWS Dependencies
 
 Ask the user if `boto3` is used for anything other than Bedrock. If not:
@@ -192,7 +192,7 @@ Comment out (do NOT delete) old env vars:
 # AWS_ACCESS_KEY_ID=...            # No longer needed for Bedrock — using MERGE_GATEWAY_API_KEY
 # AWS_SECRET_ACCESS_KEY=...        # No longer needed for Bedrock — using MERGE_GATEWAY_API_KEY
 MERGE_GATEWAY_API_KEY=mg_your_api_key_here
-MERGE_GATEWAY_BASE_URL=https://gateway.merge.dev
+MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 ```
 
 ### 9. Verify
@@ -212,7 +212,7 @@ response = client.responses.create(
     model="openai/gpt-4o",
     input=[{"type": "message", "role": "user", "content": "Say 'Bedrock migration successful!' and nothing else."}],
 )
-print(response.output[0].content)
+print(response.output[0].content[0].text)
 ```
 
 ## Cross-Cutting Rules
