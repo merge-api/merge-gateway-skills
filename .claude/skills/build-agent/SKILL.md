@@ -1,6 +1,6 @@
 # Build a Tool-Use Agent
 
-Scaffold a function-calling agent loop using the OpenAI SDK pointed at Merge Gateway.
+Scaffold a function-calling agent loop using the Merge Gateway SDK.
 
 ## Steps
 
@@ -19,7 +19,19 @@ Determine Python or TypeScript from the project:
 
 If both are present, ask the user which they prefer.
 
-### 3. Scaffold the Agent
+### 3. Install the Merge Gateway SDK
+
+Python:
+```bash
+pip install merge-gateway
+```
+
+TypeScript/Node:
+```bash
+npm install merge-gateway-sdk
+```
+
+### 4. Scaffold the Agent
 
 Create the agent file with these components:
 
@@ -28,11 +40,11 @@ Create the agent file with these components:
 ```python
 import json
 import os
-from openai import OpenAI
+from merge_gateway import MergeGateway
 
-client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
 # --- Tool definitions ---
@@ -40,16 +52,14 @@ client = OpenAI(
 tools = [
     {
         "type": "function",
-        "function": {
-            "name": "tool_name",
-            "description": "What this tool does",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "param1": {"type": "string", "description": "Description of param1"},
-                },
-                "required": ["param1"],
+        "name": "tool_name",
+        "description": "What this tool does",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "param1": {"type": "string", "description": "Description of param1"},
             },
+            "required": ["param1"],
         },
     },
 ]
@@ -79,32 +89,24 @@ def execute_tool(name: str, arguments: dict) -> str:
 
 def run_agent(user_message: str, system_prompt: str = "You are a helpful assistant.") -> str:
     messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_message},
+        {"type": "message", "role": "system", "content": system_prompt},
+        {"type": "message", "role": "user", "content": user_message},
     ]
 
     while True:
-        response = client.chat.completions.create(
+        response = client.responses.create(
             model="openai/gpt-4o",
-            messages=messages,
+            input=messages,
             tools=tools,
         )
-        message = response.choices[0].message
+        output = response.output[0]
 
-        if not message.tool_calls:
-            return message.content
+        if output.type != "function_call":
+            return output.content
 
-        messages.append(message)
-        for tool_call in message.tool_calls:
-            result = execute_tool(
-                tool_call.function.name,
-                json.loads(tool_call.function.arguments),
-            )
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": result,
-            })
+        result = execute_tool(output.name, json.loads(output.arguments))
+        messages.append({"type": "function_call", "name": output.name, "arguments": output.arguments, "call_id": output.call_id})
+        messages.append({"type": "function_call_output", "call_id": output.call_id, "output": result})
 
 if __name__ == "__main__":
     response = run_agent("Your test prompt here")
@@ -114,29 +116,26 @@ if __name__ == "__main__":
 **TypeScript agent (`agent.ts`):**
 
 ```typescript
-import OpenAI from "openai";
-import type { ChatCompletionMessageParam, ChatCompletionTool } from "openai/resources/chat/completions";
+import { MergeGateway } from "merge-gateway-sdk";
 
-const client = new OpenAI({
-  baseURL: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
-  apiKey: process.env.MERGE_GATEWAY_API_KEY,
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 
 // --- Tool definitions ---
 
-const tools: ChatCompletionTool[] = [
+const tools = [
   {
-    type: "function",
-    function: {
-      name: "tool_name",
-      description: "What this tool does",
-      parameters: {
-        type: "object",
-        properties: {
-          param1: { type: "string", description: "Description of param1" },
-        },
-        required: ["param1"],
+    type: "function" as const,
+    name: "tool_name",
+    description: "What this tool does",
+    parameters: {
+      type: "object",
+      properties: {
+        param1: { type: "string", description: "Description of param1" },
       },
+      required: ["param1"],
     },
   },
 ];
@@ -164,35 +163,26 @@ function executeTool(name: string, args: Record<string, unknown>): string {
 // --- Agent loop ---
 
 async function runAgent(userMessage: string, systemPrompt = "You are a helpful assistant."): Promise<string> {
-  const messages: ChatCompletionMessageParam[] = [
-    { role: "system", content: systemPrompt },
-    { role: "user", content: userMessage },
+  const messages: any[] = [
+    { type: "message", role: "system", content: systemPrompt },
+    { type: "message", role: "user", content: userMessage },
   ];
 
   while (true) {
-    const response = await client.chat.completions.create({
+    const response = await client.responses.create({
       model: "openai/gpt-4o",
-      messages,
+      input: messages,
       tools,
     });
-    const message = response.choices[0].message;
+    const output = response.output[0];
 
-    if (!message.tool_calls?.length) {
-      return message.content ?? "";
+    if (output.type !== "function_call") {
+      return output.content ?? "";
     }
 
-    messages.push(message);
-    for (const toolCall of message.tool_calls) {
-      const result = executeTool(
-        toolCall.function.name,
-        JSON.parse(toolCall.function.arguments),
-      );
-      messages.push({
-        role: "tool",
-        tool_call_id: toolCall.id,
-        content: result,
-      });
-    }
+    messages.push({ type: "function_call", name: output.name, arguments: output.arguments, call_id: output.call_id });
+    const result = executeTool(output.name, JSON.parse(output.arguments));
+    messages.push({ type: "function_call_output", call_id: output.call_id, output: result });
   }
 }
 
@@ -201,21 +191,13 @@ async function runAgent(userMessage: string, systemPrompt = "You are a helpful a
 runAgent("Your test prompt here").then(console.log);
 ```
 
-### 4. Customize for the User's Requirements
+### 5. Customize for the User's Requirements
 
 Based on the user's answers from step 1:
 - Replace placeholder tool definitions with real tools matching their requirements
 - Write meaningful tool implementations (or stubs with TODO comments if external APIs are needed)
 - Set an appropriate system prompt for the agent's purpose
 - Use the user's preferred model
-
-### 5. Ensure Dependencies
-
-Check if the OpenAI SDK is installed:
-- Python: check `requirements.txt` / `pyproject.toml` for `openai`
-- TypeScript: check `package.json` for `openai`
-
-If not present, add it and inform the user to install.
 
 ### 6. Verify
 
@@ -232,4 +214,4 @@ When explaining the setup to the user, mention:
 
 - **Provider-prefixed models** — ALL model names must use `provider/model` format (e.g., `openai/gpt-4o`, not `gpt-4o`).
 - **Env vars** — Always use `MERGE_GATEWAY_API_KEY` and `MERGE_GATEWAY_BASE_URL` environment variables, never hardcoded values.
-- **OpenAI SDK base URL** — Always append `/v1` to the base URL: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
+- **Base URL** — Always append `/v1` to the base URL.

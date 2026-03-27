@@ -31,7 +31,7 @@ Before making changes, check if `MERGE_GATEWAY` or `gateway.merge.dev` already e
 
 ### 3. Migrate OpenAI SDK (Simplest Path)
 
-This is the simplest migration — just add `base_url` and swap the API key.
+This is the simplest migration — swap to the Merge Gateway SDK.
 
 Python:
 ```python
@@ -40,10 +40,10 @@ from openai import OpenAI
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 # After
-from openai import OpenAI
-client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+from merge_gateway import MergeGateway
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 ```
 
@@ -54,10 +54,10 @@ import OpenAI from "openai";
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // After
-import OpenAI from "openai";
-const client = new OpenAI({
-  baseURL: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
-  apiKey: process.env.MERGE_GATEWAY_API_KEY,
+import { MergeGateway } from "merge-gateway-sdk";
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 ```
 
@@ -72,7 +72,7 @@ Prefix all model names:
 
 ### 4. Migrate Anthropic SDK
 
-Update the base URL and API key. **Note:** Anthropic SDK base URL does NOT include `/v1`.
+Replace the Anthropic SDK with the Merge Gateway SDK. **Note:** You can alternatively keep the Anthropic SDK and point it at Gateway (without `/v1`), but the Merge Gateway SDK is the primary recommended approach.
 
 Python:
 ```python
@@ -81,10 +81,10 @@ from anthropic import Anthropic
 client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
 # After
-from anthropic import Anthropic
-client = Anthropic(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"],
+from merge_gateway import MergeGateway
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 ```
 
@@ -95,10 +95,10 @@ import Anthropic from "@anthropic-ai/sdk";
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // After
-import Anthropic from "@anthropic-ai/sdk";
-const client = new Anthropic({
-  baseURL: process.env.MERGE_GATEWAY_BASE_URL,
-  apiKey: process.env.MERGE_GATEWAY_API_KEY,
+import { MergeGateway } from "merge-gateway-sdk";
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 ```
 
@@ -109,9 +109,9 @@ Prefix all model names:
 
 ### 5. Migrate Google Generative AI (Bigger Refactor)
 
-Google's SDK has a different API shape — this requires switching to the OpenAI SDK.
+Google's SDK has a different API shape — this requires switching to the Merge Gateway SDK.
 
-**Explain to the user:** Google's `generativeai` SDK uses a different API format than OpenAI's. The migration involves switching to the OpenAI SDK pointed at Gateway, which provides a unified interface to all providers including Google models.
+**Explain to the user:** Google's `generativeai` SDK uses a different API format. The migration involves switching to the Merge Gateway SDK, which provides a unified interface to all providers including Google models.
 
 Python:
 ```python
@@ -123,16 +123,17 @@ response = model.generate_content("Hello!")
 print(response.text)
 
 # After
-from openai import OpenAI
-client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+from merge_gateway import MergeGateway
+import os
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
-response = client.chat.completions.create(
+response = client.responses.create(
     model="google/gemini-2.0-flash",
-    messages=[{"role": "user", "content": "Hello!"}],
+    input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
-print(response.choices[0].message.content)
+print(response.output[0].content)
 ```
 
 TypeScript:
@@ -145,16 +146,16 @@ const result = await model.generateContent("Hello!");
 console.log(result.response.text());
 
 // After
-import OpenAI from "openai";
-const client = new OpenAI({
-  baseURL: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
-  apiKey: process.env.MERGE_GATEWAY_API_KEY,
+import { MergeGateway } from "merge-gateway-sdk";
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
-const response = await client.chat.completions.create({
+const response = await client.responses.create({
   model: "google/gemini-2.0-flash",
-  messages: [{ role: "user", content: "Hello!" }],
+  input: [{ type: "message", role: "user", content: "Hello!" }],
 });
-console.log(response.choices[0].message.content);
+console.log(response.output[0].content);
 ```
 
 Google model name mapping:
@@ -164,11 +165,11 @@ Google model name mapping:
 - `gemini-1.5-flash` → `google/gemini-1.5-flash`
 
 **Message format translation:**
-- `generate_content("text")` → `messages=[{"role": "user", "content": "text"}]`
-- `chat.send_message("text")` → append to messages array and call `chat.completions.create()`
-- Multi-turn: maintain a `messages` array instead of using `model.start_chat()`
+- `generate_content("text")` → `input=[{"type": "message", "role": "user", "content": "text"}]`
+- `chat.send_message("text")` → append to input array and call `client.responses.create()`
+- Multi-turn: maintain an `input` array instead of using `model.start_chat()`
 
-After migration, the `google-generativeai` / `@google/generative-ai` dependency can be removed if it's no longer used elsewhere.
+After migration, the `google-generativeai` / `@google/generative-ai` dependency can be removed if it's no longer used elsewhere. Install `merge-gateway` (Python) or `merge-gateway-sdk` (TypeScript) if not already present.
 
 ### 6. Consolidate Environment Variables
 
@@ -196,18 +197,18 @@ Generate a test script matching the SDK(s) that were migrated:
 
 ```python
 import os
-from openai import OpenAI
+from merge_gateway import MergeGateway
 
-client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
-response = client.chat.completions.create(
+response = client.responses.create(
     model="openai/gpt-4o",
-    messages=[{"role": "user", "content": "Say 'Migration successful!' and nothing else."}],
+    input=[{"type": "message", "role": "user", "content": "Say 'Migration successful!' and nothing else."}],
 )
-print(response.choices[0].message.content)
+print(response.output[0].content)
 ```
 
 ## Cross-Cutting Rules
@@ -215,6 +216,6 @@ print(response.choices[0].message.content)
 - **Never delete old configuration** — comment out old env vars with a note about the replacement.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **OpenAI SDK base URL** — Append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
-- **Anthropic SDK base URL** — Do NOT append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"]`.
+- **Merge Gateway SDK base URL** — Append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
+- **Anthropic SDK compatibility** — If keeping Anthropic SDK as alternative, do NOT append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"]`.
 - **Both languages** — Support Python and TypeScript/Node.js patterns.

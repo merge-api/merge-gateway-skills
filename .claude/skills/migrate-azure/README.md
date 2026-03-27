@@ -1,11 +1,11 @@
 # Migrate from Azure OpenAI
 
-Switch from the Azure OpenAI SDK to the standard OpenAI SDK through Merge Gateway.
+Switch from the Azure OpenAI SDK to the Merge Gateway SDK.
 
 ## What it does
 
 - Finds all `AzureOpenAI` client constructors and Azure-specific parameters
-- Replaces `AzureOpenAI` with standard `OpenAI` client
+- Replaces `AzureOpenAI` with Merge Gateway SDK client
 - Maps Azure deployment names to Gateway model names (with your confirmation)
 - Removes Azure-specific config (`api_version`, `azure_endpoint`, `azure_ad_token`)
 - Migrates environment variables from Azure to Gateway

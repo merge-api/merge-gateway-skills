@@ -1,6 +1,6 @@
 # Migrate AWS Bedrock to Merge Gateway
 
-Migrate from boto3 Bedrock calls to the OpenAI SDK through Merge Gateway. This is a significant API change — the request/response format changes entirely.
+Migrate from boto3 Bedrock calls to the Merge Gateway SDK. This is a significant API change — the request/response format changes entirely.
 
 ## Steps
 
@@ -38,7 +38,7 @@ Ask the user to confirm mappings, especially for less common models.
 
 ### 4. Migrate `invoke_model` Calls
 
-The `invoke_model` API uses raw JSON bodies specific to each provider. Replace with OpenAI SDK calls.
+The `invoke_model` API uses raw JSON bodies specific to each provider. Replace with Merge Gateway SDK calls.
 
 **Anthropic models via Bedrock:**
 ```python
@@ -60,20 +60,19 @@ result = json.loads(response["body"].read())
 print(result["content"][0]["text"])
 
 # After
-from openai import OpenAI
+from merge_gateway import MergeGateway
 import os
 
-client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
-response = client.chat.completions.create(
+response = client.responses.create(
     model="anthropic/claude-sonnet-4-20250514",
-    max_tokens=1024,
-    messages=[{"role": "user", "content": "Hello!"}],
+    input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
-print(response.choices[0].message.content)
+print(response.output[0].content)
 ```
 
 **Meta Llama models via Bedrock:**
@@ -91,18 +90,16 @@ result = json.loads(response["body"].read())
 print(result["generation"])
 
 # After
-response = client.chat.completions.create(
+response = client.responses.create(
     model="meta-llama/llama-3.1-70b-instruct",
-    max_tokens=512,
-    temperature=0.7,
-    messages=[{"role": "user", "content": "Hello!"}],
+    input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
-print(response.choices[0].message.content)
+print(response.output[0].content)
 ```
 
 ### 5. Migrate `converse` / `converse_stream` Calls
 
-The Bedrock Converse API has its own message format. Convert to OpenAI format.
+The Bedrock Converse API has its own message format. Convert to Merge Gateway SDK format.
 
 ```python
 # Before
@@ -119,21 +116,19 @@ response = bedrock.converse(
 print(response["output"]["message"]["content"][0]["text"])
 
 # After
-response = client.chat.completions.create(
+response = client.responses.create(
     model="anthropic/claude-sonnet-4-20250514",
-    max_tokens=1024,
-    temperature=0.7,
-    messages=[{"role": "user", "content": "Hello!"}],
+    input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
-print(response.choices[0].message.content)
+print(response.output[0].content)
 ```
 
 **Message format mapping:**
-- Bedrock `{"content": [{"text": "..."}]}` → OpenAI `{"content": "..."}`
-- Bedrock `inferenceConfig.maxTokens` → OpenAI `max_tokens`
-- Bedrock `inferenceConfig.temperature` → OpenAI `temperature`
-- Bedrock `inferenceConfig.topP` → OpenAI `top_p`
-- Bedrock `system` → OpenAI `messages` with `role: "system"`
+- Bedrock `{"content": [{"text": "..."}]}` → Merge Gateway `{"type": "message", "content": "..."}`
+- Bedrock `inferenceConfig.maxTokens` → Merge Gateway parameter
+- Bedrock `inferenceConfig.temperature` → Merge Gateway parameter
+- Bedrock `inferenceConfig.topP` → Merge Gateway parameter
+- Bedrock `system` → Merge Gateway `input` with `role: "system"`
 
 ### 6. Migrate Streaming
 
@@ -149,14 +144,13 @@ for event in response["body"]:
         print(chunk["delta"]["text"], end="")
 
 # After
-stream = client.chat.completions.create(
+response = client.responses.create(
     model="anthropic/claude-sonnet-4-20250514",
-    messages=[{"role": "user", "content": "Hello!"}],
+    input=[{"type": "message", "role": "user", "content": "Hello!"}],
     stream=True,
 )
-for chunk in stream:
-    if chunk.choices[0].delta.content:
-        print(chunk.choices[0].delta.content, end="")
+for event in response:
+    print(event, end="")
 ```
 
 ```python
@@ -170,21 +164,20 @@ for event in response["stream"]:
         print(event["contentBlockDelta"]["delta"]["text"], end="")
 
 # After (same as above)
-stream = client.chat.completions.create(
+response = client.responses.create(
     model="anthropic/claude-sonnet-4-20250514",
-    messages=[{"role": "user", "content": "Hello!"}],
+    input=[{"type": "message", "role": "user", "content": "Hello!"}],
     stream=True,
 )
-for chunk in stream:
-    if chunk.choices[0].delta.content:
-        print(chunk.choices[0].delta.content, end="")
+for event in response:
+    print(event, end="")
 ```
 
-### 7. Install OpenAI SDK
+### 7. Install Merge Gateway SDK
 
-If not already present, add `openai` to the project's dependencies:
+If not already present, add `merge-gateway` to the project's dependencies:
 - Python: add to `requirements.txt` or `pyproject.toml`
-- Inform the user to run `pip install openai` or `poetry add openai`
+- Inform the user to run `pip install merge-gateway` or `poetry add merge-gateway`
 
 ### 8. Clean Up AWS Dependencies
 
@@ -208,18 +201,18 @@ Generate a test script:
 
 ```python
 import os
-from openai import OpenAI
+from merge_gateway import MergeGateway
 
-client = OpenAI(
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
-response = client.chat.completions.create(
+response = client.responses.create(
     model="openai/gpt-4o",
-    messages=[{"role": "user", "content": "Say 'Bedrock migration successful!' and nothing else."}],
+    input=[{"type": "message", "role": "user", "content": "Say 'Bedrock migration successful!' and nothing else."}],
 )
-print(response.choices[0].message.content)
+print(response.output[0].content)
 ```
 
 ## Cross-Cutting Rules
@@ -227,5 +220,5 @@ print(response.choices[0].message.content)
 - **Never delete old configuration** — comment out old env vars with a note about the replacement.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **OpenAI SDK base URL** — Always append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
+- **Merge Gateway SDK base URL** — Always append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
 - **Ask before removing boto3** — It may be used for other AWS services beyond Bedrock.
