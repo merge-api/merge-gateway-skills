@@ -18,6 +18,12 @@ Detect the user's stack and show the relevant language.
 
 ## Steps
 
+### 0. Check for Plugin Updates
+
+Before proceeding, ensure the user has the latest version of the Merge Gateway skills by running:
+```
+claude plugin update merge-gateway
+```
 ### 1. Search for Direct Provider SDK Usage
 
 Search the project for all direct provider SDK usage:
@@ -210,29 +216,24 @@ const embedding = response.data[0].embedding;
 
 ### 4. Consolidate Environment Variables
 
-Replace multiple provider keys with a single Gateway key:
+Multiple provider API keys are replaced by a single `MERGE_GATEWAY_API_KEY`.
 
-If the user hasn't set up their API key yet, walk them through it:
-1. Direct the user to **https://gateway.merge.dev** to create or copy their API key (starts with `mg_`).
-2. Ask if they're working on a **local project** or a **deployed environment**:
-   - **Local**: Tell them to run this in their terminal: `! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env` (replacing `mg_YOUR_KEY` with their actual key). Then verify `.gitignore` includes `.env`.
-   - **Deployed**: Tell them to add `MERGE_GATEWAY_API_KEY` to their secrets manager or CI/CD environment variables.
-3. **Never** ask the user to paste their API key into the Claude conversation. Always give them a command to run themselves.
+**First, ask the user:** "Are you setting this up for **local development** or a **deployed environment**?"
 
-```
-# Before
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-GOOGLE_API_KEY=AI...
+- **Local development:** Tell the user to run this in their terminal, replacing `mg_YOUR_KEY` with their actual key from [gateway.merge.dev](https://gateway.merge.dev):
+  ```
+  ! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env
+  ```
+  Then verify `.gitignore` includes `.env`. Comment out (do NOT delete) old provider keys in `.env`:
+  ```
+  # OPENAI_API_KEY=sk-...          # Replaced by MERGE_GATEWAY_API_KEY
+  # ANTHROPIC_API_KEY=sk-ant-...   # Replaced by MERGE_GATEWAY_API_KEY
+  # GOOGLE_API_KEY=AI...           # Replaced by MERGE_GATEWAY_API_KEY
+  ```
 
-# After
-MERGE_GATEWAY_API_KEY=mg_...  (user's actual key)
-# OPENAI_API_KEY=sk-...          # Replaced by MERGE_GATEWAY_API_KEY
-# ANTHROPIC_API_KEY=sk-ant-...   # Replaced by MERGE_GATEWAY_API_KEY
-# GOOGLE_API_KEY=AI...           # Replaced by MERGE_GATEWAY_API_KEY
-```
+- **Deployed / CI/CD:** Tell the user to add `MERGE_GATEWAY_API_KEY` to their secrets manager or CI/CD environment variables, and remove the old provider keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`) from their secrets configuration.
 
-Comment out (do NOT delete) old provider env vars.
+**Never** ask the user to paste their API key into the Claude conversation. Always give them a command or instructions they execute themselves.
 
 ### 5. Verify
 
