@@ -59,7 +59,37 @@ Common mappings:
 
 ### 4. Migrate Client Constructors
 
-Replace `AzureOpenAI` with the Merge Gateway SDK:
+Replace `AzureOpenAI` with the Merge Gateway SDK.
+
+**Choose your migration path:** Ask the user whether they want the quick migration (Option A) or the full migration (Option B).
+
+**STOP here and wait for the user's response.** Do NOT proceed until they answer. Once they answer, follow ONLY the matching option below:
+
+**Option A — Quick migration (keep OpenAI SDK):** Since Azure OpenAI uses the OpenAI SDK, you can keep it and just point at Gateway.
+
+Python:
+```python
+# Quick path — keep OpenAI SDK, point at Gateway
+from openai import OpenAI
+client = OpenAI(
+    api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url="https://api-gateway.merge.dev/v1/openai",
+)
+# Replace deployment names with provider-prefixed models: "my-gpt4o" → "openai/gpt-4o"
+```
+
+TypeScript:
+```typescript
+// Quick path — keep OpenAI SDK, point at Gateway
+import OpenAI from "openai";
+const client = new OpenAI({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseURL: "https://api-gateway.merge.dev/v1/openai",
+});
+// Replace deployment names with provider-prefixed models: "my-gpt4o" → "openai/gpt-4o"
+```
+
+**Option B — Full migration (native Merge Gateway SDK):** Switch to the Merge Gateway SDK for full access to tags, routing metadata, and model discovery.
 
 Python:
 ```python

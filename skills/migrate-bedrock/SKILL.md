@@ -62,8 +62,8 @@ Bedrock uses its own model ID format. Map them to Gateway's `provider/model` for
 
 | Bedrock Model ID | Gateway Model Name (1:1) | Latest Upgrade (optional) |
 |---|---|---|
-| `anthropic.claude-3-5-sonnet-20241022-v2:0` | `anthropic/claude-3-5-sonnet-20241022` | `anthropic/claude-sonnet-4-20250514` |
-| `anthropic.claude-3-sonnet-20240229-v1:0` | `anthropic/claude-3-sonnet-20240229` | `anthropic/claude-sonnet-4-20250514` |
+| `anthropic.claude-3-5-sonnet-20241022-v2:0` | `anthropic/claude-3-5-sonnet-20241022` | `anthropic/claude-sonnet-4-6-20250514` |
+| `anthropic.claude-3-sonnet-20240229-v1:0` | `anthropic/claude-3-sonnet-20240229` | `anthropic/claude-sonnet-4-6-20250514` |
 | `anthropic.claude-3-haiku-20240307-v1:0` | `anthropic/claude-3-haiku-20240307` | `anthropic/claude-3-5-haiku-20241022` |
 | `anthropic.claude-3-opus-20240229-v1:0` | `anthropic/claude-3-opus-20240229` | — |
 | `meta.llama3-1-70b-instruct-v1:0` | `meta-llama/llama-3.1-70b-instruct` | — |
@@ -76,6 +76,44 @@ Bedrock uses its own model ID format. Map them to Gateway's `provider/model` for
 ### 5. Migrate `invoke_model` Calls
 
 The `invoke_model` API uses raw JSON bodies specific to each provider. Replace with Merge Gateway SDK calls.
+
+**Choose your migration path:** Ask the user whether they want the quick migration (Option A) or the full migration (Option B).
+
+**STOP here and wait for the user's response.** Do NOT proceed until they answer. Once they answer, follow ONLY the matching option below:
+
+**Option A — Quick migration (OpenAI SDK compatibility):** If you want to minimize code changes, use the OpenAI SDK pointed at Gateway. This gives you a familiar `chat.completions.create()` interface.
+
+Python:
+```python
+# Quick path — use OpenAI SDK with Gateway
+from openai import OpenAI
+client = OpenAI(
+    api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url="https://api-gateway.merge.dev/v1/openai",
+)
+response = client.chat.completions.create(
+    model="anthropic/claude-sonnet-4-6-20250514",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+print(response.choices[0].message.content)
+```
+
+TypeScript:
+```typescript
+// Quick path — use OpenAI SDK with Gateway
+import OpenAI from "openai";
+const client = new OpenAI({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseURL: "https://api-gateway.merge.dev/v1/openai",
+});
+const response = await client.chat.completions.create({
+  model: "anthropic/claude-sonnet-4-6-20250514",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+console.log(response.choices[0].message.content);
+```
+
+**Option B — Full migration (native Merge Gateway SDK):** Switch to the Merge Gateway SDK for full access to tags, routing metadata, and model discovery.
 
 **Anthropic models via Bedrock:**
 ```python
@@ -105,7 +143,7 @@ client = MergeGateway(
 )
 
 response = client.responses.create(
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6-20250514",
     input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
 print(response.output[0].content[0].text)
@@ -120,7 +158,7 @@ const client = new MergeGateway({
 });
 
 const response = await client.responses.create({
-  model: "anthropic/claude-sonnet-4-20250514",
+  model: "anthropic/claude-sonnet-4-6-20250514",
   input: [{ type: "message", role: "user", content: "Hello!" }],
 });
 console.log(response.output[0].content[0].text);
@@ -168,7 +206,7 @@ print(response["output"]["message"]["content"][0]["text"])
 
 # After
 response = client.responses.create(
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6-20250514",
     input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
 print(response.output[0].content[0].text)
@@ -194,14 +232,21 @@ for event in response["body"]:
     if chunk["type"] == "content_block_delta":
         print(chunk["delta"]["text"], end="")
 
-# After
+# After — each chunk has accumulated text, print only new portion
 response = client.responses.create(
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6-20250514",
     input=[{"type": "message", "role": "user", "content": "Hello!"}],
     stream=True,
 )
-for event in response:
-    print(event, end="")
+prev_text = ""
+for chunk in response:
+    if chunk.get("object") == "response.stream":
+        content = chunk.get("output", [{}])[0].get("content", [])
+        if content and content[0].get("type") == "text":
+            new_text = content[0].get("text", "")
+            print(new_text[len(prev_text):], end="", flush=True)
+            prev_text = new_text
+print()
 ```
 
 ```python
@@ -214,28 +259,41 @@ for event in response["stream"]:
     if "contentBlockDelta" in event:
         print(event["contentBlockDelta"]["delta"]["text"], end="")
 
-# After (same as above)
+# After (same streaming pattern as above)
 response = client.responses.create(
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6-20250514",
     input=[{"type": "message", "role": "user", "content": "Hello!"}],
     stream=True,
 )
-for event in response:
-    print(event, end="")
+prev_text = ""
+for chunk in response:
+    if chunk.get("object") == "response.stream":
+        content = chunk.get("output", [{}])[0].get("content", [])
+        if content and content[0].get("type") == "text":
+            new_text = content[0].get("text", "")
+            print(new_text[len(prev_text):], end="", flush=True)
+            prev_text = new_text
+print()
 ```
 
 TypeScript (After — same for both invoke_model and converse streaming):
 ```typescript
 const stream = await client.responses.create({
-  model: "anthropic/claude-sonnet-4-20250514",
+  model: "anthropic/claude-sonnet-4-6-20250514",
   input: [{ type: "message", role: "user", content: "Hello!" }],
   stream: true,
 });
 
-for await (const event of stream) {
-  const delta = event["delta"] as Record<string, unknown> | undefined;
-  if (delta?.text) {
-    process.stdout.write(String(delta.text));
+let prevText = "";
+for await (const chunk of stream) {
+  if (chunk.object === "response.stream") {
+    const output = (chunk.output as any[])?.[0];
+    const content = output?.content?.[0];
+    if (content?.type === "text") {
+      const newText = content.text as string;
+      process.stdout.write(newText.slice(prevText.length));
+      prevText = newText;
+    }
   }
 }
 console.log();
@@ -243,7 +301,7 @@ console.log();
 
 ### 8. Clean Up AWS Dependencies
 
-Ask the user if `boto3` is used for anything other than Bedrock. If not:
+Ask the user if `boto3` is used for anything other than Bedrock. **STOP and wait for their response.** If not:
 - It can be removed from dependencies
 - AWS credential env vars can be removed
 

@@ -94,8 +94,8 @@ You can also list available tags in your account:
 Python:
 ```python
 tags = client.tags.list()
-for tag in tags.tags:
-    print(f"{tag.key}: {tag.value}")
+for tag in tags.data:
+    print(f"{tag.tag_key}: {tag.tag_value}")
 ```
 
 TypeScript:
@@ -218,7 +218,7 @@ input_msg = [{"type": "message", "role": "user", "content": question}]
 
 # Same client, different providers
 openai_response = client.responses.create(model="openai/gpt-4o", input=input_msg)
-anthropic_response = client.responses.create(model="anthropic/claude-sonnet-4-20250514", input=input_msg)
+anthropic_response = client.responses.create(model="anthropic/claude-sonnet-4-6-20250514", input=input_msg)
 google_response = client.responses.create(model="google/gemini-2.0-flash", input=input_msg)
 
 print("OpenAI:", openai_response.output[0].content[0].text)
@@ -237,7 +237,7 @@ const inputMsg = [{ type: "message", role: "user", content: question }];
 
 // Same client, different providers
 const openaiResponse = await client.responses.create({ model: "openai/gpt-4o", input: inputMsg });
-const anthropicResponse = await client.responses.create({ model: "anthropic/claude-sonnet-4-20250514", input: inputMsg });
+const anthropicResponse = await client.responses.create({ model: "anthropic/claude-sonnet-4-6-20250514", input: inputMsg });
 const googleResponse = await client.responses.create({ model: "google/gemini-2.0-flash", input: inputMsg });
 
 console.log("OpenAI:", openaiResponse.output[0].content[0].text);
@@ -253,12 +253,12 @@ Python:
 ```python
 # List all available models
 models = client.models.list()
-for model in models.models:
+for model in models.data:
     print(f"{model.id} — {model.provider}")
 
 # Filter by provider
 openai_models = client.models.list(provider="openai")
-for model in openai_models.models:
+for model in openai_models.data:
     print(f"  {model.id}")
 
 # Filter by capability
@@ -269,8 +269,8 @@ model = client.models.retrieve("openai/gpt-4o")
 print(f"Model: {model.id}")
 print(f"Provider: {model.provider}")
 if model.pricing:
-    print(f"Input: ${model.pricing.input_per_million_tokens}/M tokens")
-    print(f"Output: ${model.pricing.output_per_million_tokens}/M tokens")
+    print(f"Input: ${model.pricing.input_per_million}/M tokens")
+    print(f"Output: ${model.pricing.output_per_million}/M tokens")
 ```
 
 TypeScript:
@@ -307,7 +307,7 @@ For complex reasoning tasks, enable extended thinking on supported models:
 Python:
 ```python
 response = client.responses.create(
-    model="anthropic/claude-sonnet-4-20250514",
+    model="anthropic/claude-sonnet-4-6-20250514",
     input=[{"type": "message", "role": "user", "content": "Solve this step by step: What is 127 * 843?"}],
     thinking={"type": "enabled", "budget_tokens": 5000},
 )
@@ -323,7 +323,7 @@ for block in response.output[0].content:
 TypeScript:
 ```typescript
 const response = await client.responses.create({
-  model: "anthropic/claude-sonnet-4-20250514",
+  model: "anthropic/claude-sonnet-4-6-20250514",
   input: [{ type: "message", role: "user", content: "Solve this step by step: What is 127 * 843?" }],
   thinking: { type: "enabled", budget_tokens: 5000 },
 });
