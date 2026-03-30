@@ -4,9 +4,12 @@ Guide a developer through adding Merge Gateway to an existing project. Detect th
 
 ## Language Support
 
-**The Python SDK (`merge-gateway-sdk`) is the default and primary Gateway SDK.** Always prefer Python examples and migration paths. Use `from merge_gateway import MergeGateway` for all Python projects.
+The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
 
-The TypeScript/Node SDK (`merge-gateway-sdk` on npm) is **coming soon** and not yet published. TypeScript examples are included below for reference and future use, but should not be used for active migrations until the SDK is available. If a TypeScript project needs Gateway access now, use the Python SDK or contact the Gateway team.
+- **Python:** `pip install merge-gateway-sdk`
+- **TypeScript/Node:** `npm install merge-gateway-sdk`
+
+Detect the user's stack and show the relevant language.
 
 ## Steps
 
@@ -34,12 +37,12 @@ If not, direct the user to create one:
 
 ### 3. Install the Merge Gateway SDK
 
-Python (default):
+Python:
 ```bash
 pip install merge-gateway-sdk
 ```
 
-TypeScript/Node (coming soon — SDK not yet published):
+TypeScript/Node:
 ```bash
 npm install merge-gateway-sdk
 ```
@@ -63,7 +66,7 @@ client = MergeGateway(
 )
 ```
 
-TypeScript (coming soon — SDK not yet published):
+TypeScript:
 ```typescript
 // Before (OpenAI)
 import OpenAI from "openai";
@@ -73,7 +76,7 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 import { MergeGateway } from "merge-gateway-sdk";
 
 const client = new MergeGateway({
-  apiKey: process.env.MERGE_GATEWAY_API_KEY,
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
   baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 ```
@@ -103,7 +106,7 @@ response = client.responses.create(
 print(response.output[0].content[0].text)
 ```
 
-TypeScript (coming soon):
+TypeScript:
 ```typescript
 // Before (OpenAI)
 const response = await client.chat.completions.create({
@@ -183,7 +186,7 @@ response = client.responses.create(
 print(response.output[0].content[0].text)
 ```
 
-TypeScript (`test_gateway.ts`) — coming soon, SDK not yet published:
+TypeScript (`test_gateway.ts`):
 ```typescript
 import { MergeGateway } from "merge-gateway-sdk";
 
@@ -209,6 +212,7 @@ main();
 
 The Gateway SDK also supports embeddings. The response format matches the OpenAI SDK:
 
+Python:
 ```python
 # Before (OpenAI)
 response = client.embeddings.create(model="text-embedding-3-small", input="Hello")
@@ -219,29 +223,54 @@ response = client.embeddings.create(model="openai/text-embedding-3-small", input
 embedding = response.data[0].embedding
 ```
 
+TypeScript:
+```typescript
+// Before (OpenAI)
+const response = await client.embeddings.create({ model: "text-embedding-3-small", input: "Hello" });
+const embedding = response.data[0].embedding;
+
+// After (Merge Gateway)
+const response = await client.embeddings.create({ model: "openai/text-embedding-3-small", input: "Hello" });
+const embedding = response.data[0].embedding;
+```
+
 **Streaming:**
 
-The Gateway SDK supports streaming responses. The stream yields raw JSON event dicts via Server-Sent Events:
+The Gateway SDK supports streaming responses via Server-Sent Events:
 
+Python:
 ```python
-# Streaming response
 response = client.responses.create(
     model="openai/gpt-4o",
     input=[{"type": "message", "role": "user", "content": "Tell me a story."}],
     stream=True,
 )
 
-# Use as context manager to ensure cleanup
 with response as stream:
     for event in stream:
-        # Each event is a dict — structure varies by event type
-        # Common pattern: check for text content
         if "delta" in event:
             print(event["delta"].get("text", ""), end="", flush=True)
-print()  # Final newline
+print()
 ```
 
-> **Note:** Stream events are raw dicts, not typed objects. The event structure follows the SSE format from the API. The stream terminates automatically when complete.
+TypeScript:
+```typescript
+const stream = await client.responses.create({
+  model: "openai/gpt-4o",
+  input: [{ type: "message", role: "user", content: "Tell me a story." }],
+  stream: true,
+});
+
+for await (const event of stream) {
+  const delta = event["delta"] as Record<string, unknown> | undefined;
+  if (delta?.text) {
+    process.stdout.write(String(delta.text));
+  }
+}
+console.log();
+```
+
+> **Note:** Stream events are raw JSON objects (dicts in Python, `Record<string, unknown>` in TypeScript). The event structure follows the SSE format from the API.
 
 Ask the user if they want to run the test script.
 
@@ -249,6 +278,7 @@ Ask the user if they want to run the test script.
 
 Show the user how to handle common Gateway errors. The SDK provides typed exceptions for each error case:
 
+Python:
 ```python
 from merge_gateway import MergeGateway, AuthenticationError, BadRequestError, RateLimitError, APIError
 
@@ -274,6 +304,41 @@ except APIError as e:
     print(f"API error {e.status_code}: {e.message}")
 ```
 
+TypeScript:
+```typescript
+import {
+  MergeGateway,
+  AuthenticationError,
+  BadRequestError,
+  RateLimitError,
+  APIError,
+} from "merge-gateway-sdk";
+
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
+});
+
+try {
+  const response = await client.responses.create({
+    model: "openai/gpt-4o",
+    input: [{ type: "message", role: "user", content: "Hello!" }],
+  });
+  console.log(response.output[0].content[0].text);
+} catch (e) {
+  if (e instanceof AuthenticationError) {
+    console.error("Invalid API key. Check MERGE_GATEWAY_API_KEY.");
+  } else if (e instanceof BadRequestError) {
+    console.error(`Bad request: ${e.message}`);
+  } else if (e instanceof RateLimitError) {
+    console.error("Rate limit hit. Back off and retry.");
+  } else if (e instanceof APIError) {
+    // Catches all other API errors (including 402 budget exceeded)
+    console.error(`API error ${e.statusCode}: ${e.message}`);
+  }
+}
+```
+
 **Common error codes:**
 | Status | Exception | Meaning |
 |---|---|---|
@@ -289,6 +354,5 @@ All exceptions inherit from `MergeGatewayError` and have `.message`, `.status_co
 
 - **Never delete old configuration** — comment it out with a note about the replacement.
 - **Idempotency** — Before making changes, check if `MERGE_GATEWAY_BASE_URL` or `api-gateway.merge.dev` is already present. If so, skip those files and tell the user.
-- **Python is the default** — The Python SDK is the primary Gateway SDK. TypeScript SDK is coming soon. Always prefer Python migration paths. If a TypeScript project is detected, note that the TS SDK is not yet available and suggest using the Python SDK or waiting.
 - **Provider-prefixed models** — ALL model names must use the `provider/model` format when going through Gateway.
 - **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code: `MERGE_GATEWAY_BASE_URL + "/v1"`. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.

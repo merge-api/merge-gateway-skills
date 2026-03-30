@@ -1,6 +1,16 @@
+
 # Migrate LiteLLM to Merge Gateway
 
 Migrate from a self-hosted LiteLLM proxy or the LiteLLM Python library to Merge Gateway.
+
+## Language Support
+
+The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
+
+- **Python:** `pip install merge-gateway-sdk`
+- **TypeScript/Node:** `npm install merge-gateway-sdk`
+
+Detect the user's stack and show the relevant language.
 
 ## Steps
 
@@ -89,11 +99,23 @@ const client = new MergeGateway({
 });
 ```
 
-**Model names:** LiteLLM uses `provider/model` format — same as Gateway. Most names transfer directly. Check and update any that need it:
+**Model names:** LiteLLM accepts models in multiple formats. Gateway requires `provider/model` format. Handle each case:
+
+**Already prefixed (transfer directly):**
 - `openai/gpt-4o` → `openai/gpt-4o` (no change)
-- `anthropic/claude-3-5-sonnet-20241022` → `anthropic/claude-sonnet-4-20250514` (update to latest)
-- `bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0` → `anthropic/claude-sonnet-4-20250514` (different prefix)
-- `azure/my-deployment` → `openai/gpt-4o` (ask user for mapping)
+- `anthropic/claude-3-5-sonnet-20241022` → `anthropic/claude-3-5-sonnet-20241022` (no change)
+
+**Un-prefixed models (need provider prefix added):**
+- `gpt-4o` → `openai/gpt-4o`
+- `gpt-4o-mini` → `openai/gpt-4o-mini`
+- `claude-3-5-haiku-20241022` → `anthropic/claude-3-5-haiku-20241022`
+- `claude-sonnet-4-20250514` → `anthropic/claude-sonnet-4-20250514`
+
+**LiteLLM-specific prefixes (need remapping):**
+- `bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0` → `anthropic/claude-3-5-sonnet-20241022` (strip Bedrock prefix and ID format)
+- `azure/my-deployment` → ask user what model the deployment maps to (e.g., `openai/gpt-4o`)
+
+**IMPORTANT:** When models lack a provider prefix, always add one. Check the config, function call sites, and any variable where model names are defined.
 
 ### 4B. Migrate LiteLLM Python Library
 
@@ -127,6 +149,9 @@ print(response.output[0].content[0].text)
 ```
 
 **Async migration:**
+
+> **Note:** The Merge Gateway Python SDK does not yet have an async client (`AsyncMergeGateway` is not available). For async code, wrap the synchronous client call in an executor:
+
 ```python
 # Before
 import litellm
@@ -136,16 +161,18 @@ response = await litellm.acompletion(
     messages=messages,
 )
 
-# After
-from merge_gateway import AsyncMergeGateway
+# After — use sync client in an executor until async is supported
+import asyncio
 import os
+from merge_gateway import MergeGateway
 
-client = AsyncMergeGateway(
+client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
     base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
-response = await client.responses.create(
+response = await asyncio.to_thread(
+    client.responses.create,
     model="openai/gpt-4o",
     input=[{"type": "message", "role": msg["role"], "content": msg["content"]} for msg in messages],
 )
@@ -179,6 +206,15 @@ response = litellm.embedding(model="openai/text-embedding-ada-002", input=["Hell
 
 # After
 response = client.embeddings.create(model="openai/text-embedding-ada-002", input=["Hello"])
+```
+
+TypeScript:
+```typescript
+// Before (using OpenAI SDK pointed at LiteLLM)
+const response = await client.embeddings.create({ model: "openai/text-embedding-ada-002", input: ["Hello"] });
+
+// After (Merge Gateway)
+const response = await client.embeddings.create({ model: "openai/text-embedding-ada-002", input: ["Hello"] });
 ```
 
 ### 5. Remove LiteLLM-Specific Configuration
@@ -239,6 +275,7 @@ Explain to the user how LiteLLM features map to Gateway:
 
 Generate a test script:
 
+Python (`test_gateway.py`):
 ```python
 import os
 from merge_gateway import MergeGateway
@@ -255,11 +292,31 @@ response = client.responses.create(
 print(response.output[0].content[0].text)
 ```
 
+TypeScript (`test_gateway.ts`):
+```typescript
+import { MergeGateway } from "merge-gateway-sdk";
+
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
+});
+
+async function main() {
+  const response = await client.responses.create({
+    model: "openai/gpt-4o",
+    input: [{ type: "message", role: "user", content: "Say 'LiteLLM migration successful!' and nothing else." }],
+  });
+  console.log(response.output[0].content[0].text);
+}
+
+main();
+```
+
 ## Cross-Cutting Rules
 
 - **Never delete old configuration** — comment out old env vars with a note about the replacement.
 - **Never delete infrastructure without asking** — LiteLLM proxy Docker/K8s configs should be flagged, not removed.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **Merge Gateway SDK base URL** — Always append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
+- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
 - **Remove `litellm` dependency last** — Only after all `litellm` imports are removed.

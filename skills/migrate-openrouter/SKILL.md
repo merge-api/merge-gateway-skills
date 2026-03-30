@@ -9,7 +9,12 @@ Find and replace all OpenRouter references with Merge Gateway equivalents.
 
 ## Language Support
 
-**The Python SDK (`merge-gateway-sdk`) is the default and primary Gateway SDK.** Always prefer Python examples and migration paths. The TypeScript/Node SDK is **coming soon** and not yet published. TypeScript examples are included below for reference and future use only.
+The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
+
+- **Python:** `pip install merge-gateway-sdk`
+- **TypeScript/Node:** `npm install merge-gateway-sdk`
+
+Detect the user's stack and show the relevant language.
 
 ## Steps
 
@@ -51,7 +56,7 @@ client = MergeGateway(
 )
 ```
 
-TypeScript (coming soon — SDK not yet published):
+TypeScript:
 ```typescript
 // Before
 const client = new OpenAI({
@@ -168,7 +173,7 @@ response = client.responses.create(
 print(response.output[0].content[0].text)
 ```
 
-TypeScript (`test_gateway.ts`) — coming soon, SDK not yet published:
+TypeScript (`test_gateway.ts`):
 ```typescript
 import { MergeGateway } from "merge-gateway-sdk";
 

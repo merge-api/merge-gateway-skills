@@ -9,7 +9,12 @@ Migrate from a self-hosted LiteLLM proxy or the LiteLLM Python library to Merge 
 
 ## Language Support
 
-**The Python SDK (`merge-gateway-sdk`) is the default and primary Gateway SDK.** Always prefer Python examples and migration paths. The TypeScript/Node SDK is **coming soon** and not yet published. TypeScript examples are included below for reference and future use only.
+The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
+
+- **Python:** `pip install merge-gateway-sdk`
+- **TypeScript/Node:** `npm install merge-gateway-sdk`
+
+Detect the user's stack and show the relevant language.
 
 ## Steps
 
@@ -79,7 +84,7 @@ response = client.responses.create(
 )
 ```
 
-TypeScript (coming soon — SDK not yet published):
+TypeScript:
 ```typescript
 // Before
 import OpenAI from "openai";
@@ -207,6 +212,15 @@ response = litellm.embedding(model="openai/text-embedding-ada-002", input=["Hell
 response = client.embeddings.create(model="openai/text-embedding-ada-002", input=["Hello"])
 ```
 
+TypeScript:
+```typescript
+// Before (using OpenAI SDK pointed at LiteLLM)
+const response = await client.embeddings.create({ model: "openai/text-embedding-ada-002", input: ["Hello"] });
+
+// After (Merge Gateway)
+const response = await client.embeddings.create({ model: "openai/text-embedding-ada-002", input: ["Hello"] });
+```
+
 ### 5. Remove LiteLLM-Specific Configuration
 
 Search for and remove LiteLLM-specific parameters:
@@ -265,6 +279,7 @@ Explain to the user how LiteLLM features map to Gateway:
 
 Generate a test script:
 
+Python (`test_gateway.py`):
 ```python
 import os
 from merge_gateway import MergeGateway
@@ -279,6 +294,26 @@ response = client.responses.create(
     input=[{"type": "message", "role": "user", "content": "Say 'LiteLLM migration successful!' and nothing else."}],
 )
 print(response.output[0].content[0].text)
+```
+
+TypeScript (`test_gateway.ts`):
+```typescript
+import { MergeGateway } from "merge-gateway-sdk";
+
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
+});
+
+async function main() {
+  const response = await client.responses.create({
+    model: "openai/gpt-4o",
+    input: [{ type: "message", role: "user", content: "Say 'LiteLLM migration successful!' and nothing else." }],
+  });
+  console.log(response.output[0].content[0].text);
+}
+
+main();
 ```
 
 ## Cross-Cutting Rules
