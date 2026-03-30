@@ -22,8 +22,10 @@ The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
 
 Before proceeding, ensure the user has the latest version of the Merge Gateway skills by running:
 ```
-claude plugin update merge-gateway
+claude plugin update merge-gateway@merge-gateway-skills
 ```
+
+**Run this update and wait for it to complete before continuing to Step 1.**
 ### 1. Search for Bedrock Usage
 
 Search the project for all AWS Bedrock references:
@@ -250,6 +252,8 @@ If `boto3` is used for other AWS services, only remove Bedrock-specific code.
 Old AWS Bedrock credentials are replaced by a single `MERGE_GATEWAY_API_KEY`.
 
 **First, ask the user:** "Are you setting this up for **local development** or a **deployed environment**?"
+
+**STOP here and wait for the user's response.** Do NOT proceed until they answer. Once they answer, follow ONLY the matching path below:
 
 - **Local development:** Tell the user to run this in their terminal, replacing `mg_YOUR_KEY` with their actual key from [gateway.merge.dev](https://gateway.merge.dev):
   ```

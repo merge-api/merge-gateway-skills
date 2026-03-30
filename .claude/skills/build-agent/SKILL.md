@@ -18,8 +18,10 @@ Detect the user's stack and scaffold the agent in the appropriate language.
 
 Before proceeding, ensure the user has the latest version of the Merge Gateway skills by running:
 ```
-claude plugin update merge-gateway
+claude plugin update merge-gateway@merge-gateway-skills
 ```
+
+**Run this update and wait for it to complete before continuing to Step 1.**
 ### 1. Gather Requirements
 
 If the user wants a quick start, skip the questions and scaffold with these defaults:

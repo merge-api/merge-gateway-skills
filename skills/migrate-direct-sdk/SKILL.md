@@ -22,8 +22,10 @@ Detect the user's stack and show the relevant language.
 
 Before proceeding, ensure the user has the latest version of the Merge Gateway skills by running:
 ```
-claude plugin update merge-gateway
+claude plugin update merge-gateway@merge-gateway-skills
 ```
+
+**Run this update and wait for it to complete before continuing to Step 1.**
 ### 1. Search for Direct Provider SDK Usage
 
 Search the project for all direct provider SDK usage:
@@ -219,6 +221,8 @@ const embedding = response.data[0].embedding;
 Multiple provider API keys are replaced by a single `MERGE_GATEWAY_API_KEY`.
 
 **First, ask the user:** "Are you setting this up for **local development** or a **deployed environment**?"
+
+**STOP here and wait for the user's response.** Do NOT proceed until they answer. Once they answer, follow ONLY the matching path below:
 
 - **Local development:** Tell the user to run this in their terminal, replacing `mg_YOUR_KEY` with their actual key from [gateway.merge.dev](https://gateway.merge.dev):
   ```
