@@ -1,6 +1,16 @@
+
 # Migrate Azure OpenAI to Merge Gateway
 
 Migrate from the Azure OpenAI SDK to the Merge Gateway SDK.
+
+## Language Support
+
+The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
+
+- **Python:** `pip install merge-gateway-sdk`
+- **TypeScript/Node:** `npm install merge-gateway-sdk`
+
+Detect the user's stack and show the relevant language.
 
 ## Steps
 
@@ -194,10 +204,33 @@ async function main() {
 main();
 ```
 
+**Embeddings migration:**
+
+Azure embeddings migrate the same way — just prefix the model name:
+
+```python
+# Before (Azure)
+response = client.embeddings.create(model="text-embedding-ada-002", input="Hello")
+
+# After (Merge Gateway)
+response = client.embeddings.create(model="openai/text-embedding-ada-002", input="Hello")
+# Response format is the same: response.data[0].embedding
+```
+
+TypeScript:
+```typescript
+// Before (Azure)
+const response = await client.embeddings.create({ model: "text-embedding-ada-002", input: "Hello" });
+
+// After (Merge Gateway)
+const response = await client.embeddings.create({ model: "openai/text-embedding-ada-002", input: "Hello" });
+// Response format is the same: response.data[0].embedding
+```
+
 ## Cross-Cutting Rules
 
 - **Never delete old configuration** — comment out old env vars with a note about the replacement.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **Merge Gateway SDK base URL** — Always append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
+- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
 - **Azure deployment names are opaque** — Always ask the user to confirm what model each deployment maps to.

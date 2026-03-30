@@ -1,6 +1,16 @@
+
 # Migrate Direct Provider SDKs to Merge Gateway
 
 Migrate from calling OpenAI, Anthropic, or Google directly to routing through Merge Gateway.
+
+## Language Support
+
+The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
+
+- **Python:** `pip install merge-gateway-sdk`
+- **TypeScript/Node:** `npm install merge-gateway-sdk`
+
+Detect the user's stack and show the relevant language.
 
 ## Steps
 
@@ -33,7 +43,7 @@ Before making changes, check if `MERGE_GATEWAY` or `api-gateway.merge.dev` alrea
 
 For each provider detected in step 1, apply the corresponding migration below. If multiple providers are detected, apply each subsection in order.
 
-#### 3A. Migrate OpenAI SDK (Simplest Path)
+#### 3A. Migrate OpenAI SDK
 
 This is the simplest migration — swap to the Merge Gateway SDK.
 
@@ -111,7 +121,7 @@ Prefix all model names:
 - `claude-3-5-haiku-20241022` → `anthropic/claude-3-5-haiku-20241022`
 - `claude-3-opus-20240229` → `anthropic/claude-3-opus-20240229`
 
-#### 3C. Migrate Google Generative AI (Bigger Refactor)
+#### 3C. Migrate Google Generative AI
 
 Google's SDK has a different API shape — this requires switching to the Merge Gateway SDK.
 
@@ -173,7 +183,32 @@ Google model name mapping:
 - `chat.send_message("text")` → append to input array and call `client.responses.create()`
 - Multi-turn: maintain an `input` array instead of using `model.start_chat()`
 
-After migration, the `google-generativeai` / `@google/generative-ai` dependency can be removed if it's no longer used elsewhere. Install `merge-gateway` (Python) or `merge-gateway-sdk` (TypeScript) if not already present.
+After migration, the `google-generativeai` / `@google/generative-ai` dependency can be removed if it's no longer used elsewhere. Install `merge-gateway-sdk` if not already present (Python: `pip install merge-gateway-sdk`, TypeScript: `npm install merge-gateway-sdk`).
+
+**Embeddings migration:**
+
+When migrating OpenAI embeddings, the response format is preserved:
+
+```python
+# Before (OpenAI)
+response = client.embeddings.create(model="text-embedding-3-small", input="Hello")
+embedding = response.data[0].embedding
+
+# After (Merge Gateway)
+response = client.embeddings.create(model="openai/text-embedding-3-small", input="Hello")
+embedding = response.data[0].embedding  # Same response format
+```
+
+TypeScript:
+```typescript
+// Before (OpenAI)
+const response = await client.embeddings.create({ model: "text-embedding-3-small", input: "Hello" });
+const embedding = response.data[0].embedding;
+
+// After (Merge Gateway)
+const response = await client.embeddings.create({ model: "openai/text-embedding-3-small", input: "Hello" });
+const embedding = response.data[0].embedding;
+```
 
 ### 4. Consolidate Environment Variables
 
@@ -199,6 +234,7 @@ Comment out (do NOT delete) old provider env vars.
 
 Generate a test script matching the SDK(s) that were migrated:
 
+Python (`test_gateway.py`):
 ```python
 import os
 from merge_gateway import MergeGateway
@@ -215,11 +251,31 @@ response = client.responses.create(
 print(response.output[0].content[0].text)
 ```
 
+TypeScript (`test_gateway.ts`):
+```typescript
+import { MergeGateway } from "merge-gateway-sdk";
+
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
+});
+
+async function main() {
+  const response = await client.responses.create({
+    model: "openai/gpt-4o",
+    input: [{ type: "message", role: "user", content: "Say 'Migration successful!' and nothing else." }],
+  });
+  console.log(response.output[0].content[0].text);
+}
+
+main();
+```
+
 ## Cross-Cutting Rules
 
 - **Never delete old configuration** — comment out old env vars with a note about the replacement.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **Merge Gateway SDK base URL** — Append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1"`.
+- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
 - **Anthropic SDK compatibility** — If keeping Anthropic SDK as alternative, do NOT append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"]`.
-- **Both languages** — Support Python and TypeScript/Node.js patterns.
+

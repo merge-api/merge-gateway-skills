@@ -1,12 +1,28 @@
+
 # Build a Tool-Use Agent
 
 Scaffold a function-calling agent loop using the Merge Gateway SDK.
+
+## Language Support
+
+The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
+
+- **Python:** `pip install merge-gateway-sdk`
+- **TypeScript/Node:** `npm install merge-gateway-sdk`
+
+Detect the user's stack and scaffold the agent in the appropriate language.
 
 ## Steps
 
 ### 1. Gather Requirements
 
-Ask the user:
+If the user wants a quick start, skip the questions and scaffold with these defaults:
+- **Agent purpose:** General-purpose assistant
+- **Tools:** One example tool (stub with TODO)
+- **Model:** `openai/gpt-4o`
+- **System prompt:** `"You are a helpful assistant."`
+
+Otherwise, ask the user:
 - **Agent purpose** — What should the agent do? (e.g., "research assistant", "data analyst", "customer support bot")
 - **Tools needed** — What functions should the agent be able to call? (e.g., "search the web", "query a database", "read files")
 - **Model preference** — Default: `openai/gpt-4o`. Other options: `anthropic/claude-sonnet-4-20250514`, `openai/gpt-4o-mini`
@@ -88,7 +104,7 @@ def execute_tool(name: str, arguments: dict) -> str:
 # --- Agent loop ---
 
 def run_agent(user_message: str, system_prompt: str = "You are a helpful assistant.") -> str:
-    messages = [
+    input_messages = [
         {"type": "message", "role": "system", "content": system_prompt},
         {"type": "message", "role": "user", "content": user_message},
     ]
@@ -96,17 +112,27 @@ def run_agent(user_message: str, system_prompt: str = "You are a helpful assista
     while True:
         response = client.responses.create(
             model="openai/gpt-4o",
-            input=messages,
+            input=input_messages,
             tools=tools,
         )
-        output = response.output[0]
+        assistant_msg = response.output[0]
 
-        if output.type != "function_call":
-            return output.content
+        # Check if the model wants to call a tool
+        tool_calls = [block for block in assistant_msg.content if block.type == "tool_use"]
 
-        result = execute_tool(output.name, json.loads(output.arguments))
-        messages.append({"type": "function_call", "name": output.name, "arguments": output.arguments, "call_id": output.call_id})
-        messages.append({"type": "function_call_output", "call_id": output.call_id, "output": result})
+        if not tool_calls:
+            # No tool calls — extract text response
+            text_blocks = [block for block in assistant_msg.content if block.type == "text"]
+            return text_blocks[0].text if text_blocks else ""
+
+        # Process each tool call and send results back
+        for tool_call in tool_calls:
+            result = execute_tool(tool_call.name, tool_call.input or {})
+            input_messages.append({
+                "type": "tool_result",
+                "tool_use_id": tool_call.id,
+                "content": result,
+            })
 
 if __name__ == "__main__":
     response = run_agent("Your test prompt here")
@@ -163,7 +189,7 @@ function executeTool(name: string, args: Record<string, unknown>): string {
 // --- Agent loop ---
 
 async function runAgent(userMessage: string, systemPrompt = "You are a helpful assistant."): Promise<string> {
-  const messages: any[] = [
+  const inputMessages: any[] = [
     { type: "message", role: "system", content: systemPrompt },
     { type: "message", role: "user", content: userMessage },
   ];
@@ -171,18 +197,29 @@ async function runAgent(userMessage: string, systemPrompt = "You are a helpful a
   while (true) {
     const response = await client.responses.create({
       model: "openai/gpt-4o",
-      input: messages,
+      input: inputMessages,
       tools,
     });
-    const output = response.output[0];
+    const assistantMsg = response.output[0];
 
-    if (output.type !== "function_call") {
-      return output.content ?? "";
+    // Check if the model wants to call a tool
+    const toolCalls = assistantMsg.content.filter((block: any) => block.type === "tool_use");
+
+    if (toolCalls.length === 0) {
+      // No tool calls — extract text response
+      const textBlocks = assistantMsg.content.filter((block: any) => block.type === "text");
+      return textBlocks[0]?.text ?? "";
     }
 
-    messages.push({ type: "function_call", name: output.name, arguments: output.arguments, call_id: output.call_id });
-    const result = executeTool(output.name, JSON.parse(output.arguments));
-    messages.push({ type: "function_call_output", call_id: output.call_id, output: result });
+    // Process each tool call and send results back
+    for (const toolCall of toolCalls) {
+      const result = executeTool(toolCall.name, toolCall.input ?? {});
+      inputMessages.push({
+        type: "tool_result",
+        tool_use_id: toolCall.id,
+        content: result,
+      });
+    }
   }
 }
 
@@ -214,4 +251,4 @@ When explaining the setup to the user, mention:
 
 - **Provider-prefixed models** — ALL model names must use `provider/model` format (e.g., `openai/gpt-4o`, not `gpt-4o`).
 - **Env vars** — Always use `MERGE_GATEWAY_API_KEY` and `MERGE_GATEWAY_BASE_URL` environment variables, never hardcoded values.
-- **Base URL** — Always append `/v1` to the base URL.
+- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.

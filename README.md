@@ -90,8 +90,9 @@ Or just describe what you want — Claude will pick the right skill:
 
 ## How It Works
 
-All skills route your LLM calls through Merge Gateway using the **Merge Gateway SDK**:
+All skills route your LLM calls through Merge Gateway using the **Merge Gateway SDK**, available in both Python and TypeScript:
 
+Python:
 ```python
 from merge_gateway import MergeGateway
 
@@ -102,6 +103,19 @@ response = client.responses.create(
     input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
 print(response.output[0].content[0].text)
+```
+
+TypeScript:
+```typescript
+import { MergeGateway } from "merge-gateway-sdk";
+
+const client = new MergeGateway({ apiKey: "mg_..." });
+
+const response = await client.responses.create({
+  model: "openai/gpt-4o",
+  input: [{ type: "message", role: "user", content: "Hello!" }],
+});
+console.log(response.output[0].content[0].text);
 ```
 
 Key conventions:

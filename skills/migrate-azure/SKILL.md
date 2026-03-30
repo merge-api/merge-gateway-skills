@@ -9,7 +9,12 @@ Migrate from the Azure OpenAI SDK to the Merge Gateway SDK.
 
 ## Language Support
 
-**The Python SDK (`merge-gateway-sdk`) is the default and primary Gateway SDK.** Always prefer Python examples and migration paths. The TypeScript/Node SDK is **coming soon** and not yet published. TypeScript examples are included below for reference and future use only.
+The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
+
+- **Python:** `pip install merge-gateway-sdk`
+- **TypeScript/Node:** `npm install merge-gateway-sdk`
+
+Detect the user's stack and show the relevant language.
 
 ## Steps
 
@@ -68,7 +73,7 @@ client = MergeGateway(
 )
 ```
 
-TypeScript (coming soon — SDK not yet published):
+TypeScript:
 ```typescript
 // Before
 import { AzureOpenAI } from "openai";
@@ -183,7 +188,7 @@ response = client.responses.create(
 print(response.output[0].content[0].text)
 ```
 
-TypeScript (`test_gateway.ts`) — coming soon, SDK not yet published:
+TypeScript (`test_gateway.ts`):
 ```typescript
 import { MergeGateway } from "merge-gateway-sdk";
 
@@ -214,6 +219,16 @@ response = client.embeddings.create(model="text-embedding-ada-002", input="Hello
 # After (Merge Gateway)
 response = client.embeddings.create(model="openai/text-embedding-ada-002", input="Hello")
 # Response format is the same: response.data[0].embedding
+```
+
+TypeScript:
+```typescript
+// Before (Azure)
+const response = await client.embeddings.create({ model: "text-embedding-ada-002", input: "Hello" });
+
+// After (Merge Gateway)
+const response = await client.embeddings.create({ model: "openai/text-embedding-ada-002", input: "Hello" });
+// Response format is the same: response.data[0].embedding
 ```
 
 ## Cross-Cutting Rules

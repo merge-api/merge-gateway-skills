@@ -9,7 +9,12 @@ Scaffold a function-calling agent loop using the Merge Gateway SDK.
 
 ## Language Support
 
-**The Python SDK (`merge-gateway-sdk`) is the default and primary Gateway SDK.** Always prefer Python when scaffolding agents. The TypeScript/Node SDK is **coming soon** and not yet published. TypeScript examples are included below for reference and future use only.
+The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
+
+- **Python:** `pip install merge-gateway-sdk`
+- **TypeScript/Node:** `npm install merge-gateway-sdk`
+
+Detect the user's stack and scaffold the agent in the appropriate language.
 
 ## Steps
 
@@ -36,12 +41,12 @@ If both are present, ask the user which they prefer.
 
 ### 3. Install the Merge Gateway SDK
 
-Python (default):
+Python:
 ```bash
 pip install merge-gateway-sdk
 ```
 
-TypeScript/Node (coming soon — SDK not yet published):
+TypeScript/Node:
 ```bash
 npm install merge-gateway-sdk
 ```
@@ -138,7 +143,7 @@ if __name__ == "__main__":
     print(response)
 ```
 
-**TypeScript agent (`agent.ts`) — coming soon, SDK not yet published:**
+**TypeScript agent (`agent.ts`):**
 
 ```typescript
 import { MergeGateway } from "merge-gateway-sdk";

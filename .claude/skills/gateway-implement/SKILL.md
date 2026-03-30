@@ -1,6 +1,11 @@
-# Integrate Merge Gateway
+## Language Support
 
-Guide a developer through adding Merge Gateway to an existing project. Detect their stack, install the Merge Gateway SDK, update configuration, and verify the integration works.
+The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
+
+- **Python:** `pip install merge-gateway-sdk`
+- **TypeScript/Node:** `npm install merge-gateway-sdk`
+
+Detect the user's stack and show the relevant language.
 
 ## Steps
 
@@ -67,7 +72,7 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 import { MergeGateway } from "merge-gateway-sdk";
 
 const client = new MergeGateway({
-  apiKey: process.env.MERGE_GATEWAY_API_KEY,
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
   baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 ```
@@ -145,6 +150,8 @@ MERGE_GATEWAY_API_KEY=mg_your_api_key_here
 MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 ```
 
+**IMPORTANT:** `MERGE_GATEWAY_BASE_URL` must NOT include `/v1`. The `/v1` is appended in code. If you find the env var already set with `/v1`, strip it to avoid double-pathing.
+
 Check `.gitignore` includes `.env`. If not, warn the user.
 
 Comment out (do NOT delete) any old provider API key env vars:
@@ -197,12 +204,151 @@ async function main() {
 main();
 ```
 
+**Embeddings migration:**
+
+The Gateway SDK also supports embeddings. The response format matches the OpenAI SDK:
+
+Python:
+```python
+# Before (OpenAI)
+response = client.embeddings.create(model="text-embedding-3-small", input="Hello")
+embedding = response.data[0].embedding
+
+# After (Merge Gateway)
+response = client.embeddings.create(model="openai/text-embedding-3-small", input="Hello")
+embedding = response.data[0].embedding
+```
+
+TypeScript:
+```typescript
+// Before (OpenAI)
+const response = await client.embeddings.create({ model: "text-embedding-3-small", input: "Hello" });
+const embedding = response.data[0].embedding;
+
+// After (Merge Gateway)
+const response = await client.embeddings.create({ model: "openai/text-embedding-3-small", input: "Hello" });
+const embedding = response.data[0].embedding;
+```
+
+**Streaming:**
+
+The Gateway SDK supports streaming responses via Server-Sent Events:
+
+Python:
+```python
+response = client.responses.create(
+    model="openai/gpt-4o",
+    input=[{"type": "message", "role": "user", "content": "Tell me a story."}],
+    stream=True,
+)
+
+with response as stream:
+    for event in stream:
+        if "delta" in event:
+            print(event["delta"].get("text", ""), end="", flush=True)
+print()
+```
+
+TypeScript:
+```typescript
+const stream = await client.responses.create({
+  model: "openai/gpt-4o",
+  input: [{ type: "message", role: "user", content: "Tell me a story." }],
+  stream: true,
+});
+
+for await (const event of stream) {
+  const delta = event["delta"] as Record<string, unknown> | undefined;
+  if (delta?.text) {
+    process.stdout.write(String(delta.text));
+  }
+}
+console.log();
+```
+
+> **Note:** Stream events are raw JSON objects (dicts in Python, `Record<string, unknown>` in TypeScript). The event structure follows the SSE format from the API.
+
 Ask the user if they want to run the test script.
+
+### 8. Error Handling
+
+Show the user how to handle common Gateway errors. The SDK provides typed exceptions for each error case:
+
+Python:
+```python
+from merge_gateway import MergeGateway, AuthenticationError, BadRequestError, RateLimitError, APIError
+
+client = MergeGateway(
+    api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
+)
+
+try:
+    response = client.responses.create(
+        model="openai/gpt-4o",
+        input=[{"type": "message", "role": "user", "content": "Hello!"}],
+    )
+    print(response.output[0].content[0].text)
+except AuthenticationError:
+    print("Invalid API key. Check MERGE_GATEWAY_API_KEY.")
+except BadRequestError as e:
+    print(f"Bad request: {e.message}")
+except RateLimitError:
+    print("Rate limit hit. Back off and retry.")
+except APIError as e:
+    # Catches all other API errors (including 402 budget exceeded)
+    print(f"API error {e.status_code}: {e.message}")
+```
+
+TypeScript:
+```typescript
+import {
+  MergeGateway,
+  AuthenticationError,
+  BadRequestError,
+  RateLimitError,
+  APIError,
+} from "merge-gateway-sdk";
+
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
+});
+
+try {
+  const response = await client.responses.create({
+    model: "openai/gpt-4o",
+    input: [{ type: "message", role: "user", content: "Hello!" }],
+  });
+  console.log(response.output[0].content[0].text);
+} catch (e) {
+  if (e instanceof AuthenticationError) {
+    console.error("Invalid API key. Check MERGE_GATEWAY_API_KEY.");
+  } else if (e instanceof BadRequestError) {
+    console.error(`Bad request: ${e.message}`);
+  } else if (e instanceof RateLimitError) {
+    console.error("Rate limit hit. Back off and retry.");
+  } else if (e instanceof APIError) {
+    // Catches all other API errors (including 402 budget exceeded)
+    console.error(`API error ${e.statusCode}: ${e.message}`);
+  }
+}
+```
+
+**Common error codes:**
+| Status | Exception | Meaning |
+|---|---|---|
+| 400 | `BadRequestError` | Invalid request format or parameters |
+| 401 | `AuthenticationError` | Invalid or missing API key |
+| 402 | `APIError` (status_code=402) | Free tier budget exhausted — upgrade to Pro |
+| 404 | `NotFoundError` | Model or endpoint not found |
+| 429 | `RateLimitError` | Too many requests — implement backoff |
+
+All exceptions inherit from `MergeGatewayError` and have `.message`, `.status_code`, and `.body` attributes.
 
 ## Cross-Cutting Rules
 
 - **Never delete old configuration** — comment it out with a note about the replacement.
 - **Idempotency** — Before making changes, check if `MERGE_GATEWAY_BASE_URL` or `api-gateway.merge.dev` is already present. If so, skip those files and tell the user.
-- **Both languages** — Support Python and TypeScript/Node.js patterns. Detect which is in use from the project.
 - **Provider-prefixed models** — ALL model names must use the `provider/model` format when going through Gateway.
-- **Base URL** — Append `/v1` to the base URL: `MERGE_GATEWAY_BASE_URL + "/v1"`.
+- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code: `MERGE_GATEWAY_BASE_URL + "/v1"`. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.

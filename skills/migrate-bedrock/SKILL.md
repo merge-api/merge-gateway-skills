@@ -9,7 +9,12 @@ Migrate from boto3 Bedrock calls to the Merge Gateway SDK. This is a significant
 
 ## Language Support
 
-**The Python SDK (`merge-gateway-sdk`) is the default and primary Gateway SDK.** Bedrock migrations are Python-only (boto3 is a Python library). The TypeScript/Node SDK is **coming soon** and not yet published.
+The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
+
+- **Python:** `pip install merge-gateway-sdk`
+- **TypeScript/Node:** `npm install merge-gateway-sdk`
+
+**Note:** Bedrock itself uses boto3 (Python), but the "After" migration code uses the Merge Gateway SDK which is available in both languages. If the project is TypeScript-based and was calling Bedrock via a Python microservice or API layer, the replacement code can be written in TypeScript directly.
 
 ## Steps
 
@@ -32,8 +37,16 @@ Check if `MERGE_GATEWAY` or `api-gateway.merge.dev` already exists in the projec
 ### 3. Install Merge Gateway SDK
 
 Check if `merge-gateway-sdk` is already in the project's dependencies. If not, add it:
-- Python: add `merge-gateway-sdk` to `requirements.txt` or `pyproject.toml`
-- Inform the user to run `pip install merge-gateway-sdk` or `poetry add merge-gateway-sdk`
+
+Python:
+```bash
+pip install merge-gateway-sdk
+```
+
+TypeScript/Node:
+```bash
+npm install merge-gateway-sdk
+```
 
 ### 4. Map Bedrock Model IDs to Gateway Format
 
@@ -89,6 +102,22 @@ response = client.responses.create(
     input=[{"type": "message", "role": "user", "content": "Hello!"}],
 )
 print(response.output[0].content[0].text)
+```
+
+TypeScript (After):
+```typescript
+import { MergeGateway } from "merge-gateway-sdk";
+
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
+});
+
+const response = await client.responses.create({
+  model: "anthropic/claude-sonnet-4-20250514",
+  input: [{ type: "message", role: "user", content: "Hello!" }],
+});
+console.log(response.output[0].content[0].text);
 ```
 
 **Meta Llama models via Bedrock:**
@@ -189,6 +218,23 @@ for event in response:
     print(event, end="")
 ```
 
+TypeScript (After — same for both invoke_model and converse streaming):
+```typescript
+const stream = await client.responses.create({
+  model: "anthropic/claude-sonnet-4-20250514",
+  input: [{ type: "message", role: "user", content: "Hello!" }],
+  stream: true,
+});
+
+for await (const event of stream) {
+  const delta = event["delta"] as Record<string, unknown> | undefined;
+  if (delta?.text) {
+    process.stdout.write(String(delta.text));
+  }
+}
+console.log();
+```
+
 ### 8. Clean Up AWS Dependencies
 
 Ask the user if `boto3` is used for anything other than Bedrock. If not:
@@ -209,6 +255,7 @@ MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 
 Generate a test script:
 
+Python (`test_gateway.py`):
 ```python
 import os
 from merge_gateway import MergeGateway
@@ -223,6 +270,26 @@ response = client.responses.create(
     input=[{"type": "message", "role": "user", "content": "Say 'Bedrock migration successful!' and nothing else."}],
 )
 print(response.output[0].content[0].text)
+```
+
+TypeScript (`test_gateway.ts`):
+```typescript
+import { MergeGateway } from "merge-gateway-sdk";
+
+const client = new MergeGateway({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
+});
+
+async function main() {
+  const response = await client.responses.create({
+    model: "openai/gpt-4o",
+    input: [{ type: "message", role: "user", content: "Say 'Bedrock migration successful!' and nothing else." }],
+  });
+  console.log(response.output[0].content[0].text);
+}
+
+main();
 ```
 
 ## Cross-Cutting Rules
