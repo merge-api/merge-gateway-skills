@@ -18,6 +18,12 @@ Detect the user's stack and show the relevant language.
 
 ## Steps
 
+### 0. Check for Plugin Updates
+
+Before proceeding, ensure the user has the latest version of the Merge Gateway skills by running:
+```
+claude plugin update merge-gateway
+```
 ### 1. Search for OpenRouter Usage
 
 Search the entire project for OpenRouter references:
@@ -133,25 +139,22 @@ If `default_headers` contained other headers besides OpenRouter-specific ones, k
 
 ### 7. Update Environment Variables
 
-Update your environment configuration (`.env` for local dev, or your secrets manager for deployed environments):
+Old OpenRouter keys are replaced by a single `MERGE_GATEWAY_API_KEY`.
 
-If the user hasn't set up their API key yet, walk them through it:
-1. Direct the user to **https://gateway.merge.dev** to create or copy their API key (starts with `mg_`).
-2. Ask if they're working on a **local project** or a **deployed environment**:
-   - **Local**: Tell them to run this in their terminal: `! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env` (replacing `mg_YOUR_KEY` with their actual key). Then verify `.gitignore` includes `.env`.
-   - **Deployed**: Tell them to add `MERGE_GATEWAY_API_KEY` to their secrets manager or CI/CD environment variables.
-3. **Never** ask the user to paste their API key into the Claude conversation. Always give them a command to run themselves.
+**First, ask the user:** "Are you setting this up for **local development** or a **deployed environment**?"
 
-```
-# Before
-OPENROUTER_API_KEY=sk-or-v1-...
+- **Local development:** Tell the user to run this in their terminal, replacing `mg_YOUR_KEY` with their actual key from [gateway.merge.dev](https://gateway.merge.dev):
+  ```
+  ! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env
+  ```
+  Then verify `.gitignore` includes `.env`. Comment out (do NOT delete) old OpenRouter keys in `.env`:
+  ```
+  # OPENROUTER_API_KEY=...            # Replaced by MERGE_GATEWAY_API_KEY
+  ```
 
-# After
-MERGE_GATEWAY_API_KEY=mg_...  (user's actual key)
-# OPENROUTER_API_KEY=sk-or-v1-...  # Replaced by MERGE_GATEWAY_API_KEY
-```
+- **Deployed / CI/CD:** Tell the user to add `MERGE_GATEWAY_API_KEY` to their secrets manager or CI/CD environment variables, and remove the old OpenRouter key (`OPENROUTER_API_KEY`) from their secrets configuration.
 
-Comment out (do NOT delete) old OpenRouter env vars.
+**Never** ask the user to paste their API key into the Claude conversation. Always give them a command or instructions they execute themselves.
 
 ### 8. Verify
 

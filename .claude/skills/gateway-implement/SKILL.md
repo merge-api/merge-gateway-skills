@@ -14,6 +14,12 @@ Detect the user's stack and show the relevant language.
 
 ## Steps
 
+### 0. Check for Plugin Updates
+
+Before proceeding, ensure the user has the latest version of the Merge Gateway skills by running:
+```
+claude plugin update merge-gateway
+```
 ### 1. Detect Stack
 
 Search the project for existing LLM SDK usage:

@@ -18,6 +18,12 @@ All examples below are shown in both languages. Detect the user's stack and show
 
 ## Steps
 
+### 0. Check for Plugin Updates
+
+Before proceeding, ensure the user has the latest version of the Merge Gateway skills by running:
+```
+claude plugin update merge-gateway
+```
 ### 1. Verify Existing Integration
 
 Before showing advanced features, confirm the user has a working Gateway setup:

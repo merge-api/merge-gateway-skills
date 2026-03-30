@@ -18,6 +18,12 @@ Detect the user's stack and show the relevant language.
 
 ## Steps
 
+### 0. Check for Plugin Updates
+
+Before proceeding, ensure the user has the latest version of the Merge Gateway skills by running:
+```
+claude plugin update merge-gateway
+```
 ### 1. Search for LiteLLM Usage
 
 Search the project for all LiteLLM references:
@@ -228,30 +234,25 @@ Search for and remove LiteLLM-specific parameters:
 
 ### 6. Update Environment Variables
 
-If the user hasn't set up their API key yet, walk them through it:
-1. Direct the user to **https://gateway.merge.dev** to create or copy their API key (starts with `mg_`).
-2. Ask if they're working on a **local project** or a **deployed environment**:
-   - **Local**: Tell them to run this in their terminal: `! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env` (replacing `mg_YOUR_KEY` with their actual key). Then verify `.gitignore` includes `.env`.
-   - **Deployed**: Tell them to add `MERGE_GATEWAY_API_KEY` to their secrets manager or CI/CD environment variables.
-3. **Never** ask the user to paste their API key into the Claude conversation. Always give them a command to run themselves.
+Old LiteLLM and provider keys are replaced by a single `MERGE_GATEWAY_API_KEY`.
 
-```
-# Before
-LITELLM_API_KEY=sk-...
-LITELLM_BASE_URL=http://localhost:4000
-# Provider keys that LiteLLM used:
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
+**First, ask the user:** "Are you setting this up for **local development** or a **deployed environment**?"
 
-# After
-MERGE_GATEWAY_API_KEY=mg_...  (user's actual key)
-# LITELLM_API_KEY=sk-...              # Replaced by MERGE_GATEWAY_API_KEY
-# LITELLM_BASE_URL=http://localhost:4000  # Replaced by Merge Gateway SDK (default URL)
-# OPENAI_API_KEY=sk-...               # No longer needed — Gateway manages provider keys
-# ANTHROPIC_API_KEY=sk-ant-...        # No longer needed — Gateway manages provider keys
-```
+- **Local development:** Tell the user to run this in their terminal, replacing `mg_YOUR_KEY` with their actual key from [gateway.merge.dev](https://gateway.merge.dev):
+  ```
+  ! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env
+  ```
+  Then verify `.gitignore` includes `.env`. Comment out (do NOT delete) old LiteLLM and provider keys in `.env`:
+  ```
+  # LITELLM_API_KEY=...               # Replaced by MERGE_GATEWAY_API_KEY
+  # LITELLM_BASE_URL=...              # Replaced by MERGE_GATEWAY_API_KEY
+  # OPENAI_API_KEY=...                # Replaced by MERGE_GATEWAY_API_KEY
+  # ANTHROPIC_API_KEY=...             # Replaced by MERGE_GATEWAY_API_KEY
+  ```
 
-Comment out (do NOT delete) old env vars.
+- **Deployed / CI/CD:** Tell the user to add `MERGE_GATEWAY_API_KEY` to their secrets manager or CI/CD environment variables, and remove the old keys (`LITELLM_API_KEY`, `LITELLM_BASE_URL`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`) from their secrets configuration.
+
+**Never** ask the user to paste their API key into the Claude conversation. Always give them a command or instructions they execute themselves.
 
 ### 7. Clean Up LiteLLM Infrastructure
 

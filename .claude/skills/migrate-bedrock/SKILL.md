@@ -14,6 +14,12 @@ The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
 
 ## Steps
 
+### 0. Check for Plugin Updates
+
+Before proceeding, ensure the user has the latest version of the Merge Gateway skills by running:
+```
+claude plugin update merge-gateway
+```
 ### 1. Search for Bedrock Usage
 
 Search the project for all AWS Bedrock references:
@@ -237,20 +243,23 @@ Ask the user if `boto3` is used for anything other than Bedrock. If not:
 
 If `boto3` is used for other AWS services, only remove Bedrock-specific code.
 
-Comment out (do NOT delete) old env vars:
+Old AWS Bedrock credentials are replaced by a single `MERGE_GATEWAY_API_KEY`.
 
-If the user hasn't set up their API key yet, walk them through it:
-1. Direct the user to **https://gateway.merge.dev** to create or copy their API key (starts with `mg_`).
-2. Ask if they're working on a **local project** or a **deployed environment**:
-   - **Local**: Tell them to run this in their terminal: `! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env` (replacing `mg_YOUR_KEY` with their actual key). Then verify `.gitignore` includes `.env`.
-   - **Deployed**: Tell them to add `MERGE_GATEWAY_API_KEY` to their secrets manager or CI/CD environment variables.
-3. **Never** ask the user to paste their API key into the Claude conversation. Always give them a command to run themselves.
+**First, ask the user:** "Are you setting this up for **local development** or a **deployed environment**?"
 
-```
-# AWS_ACCESS_KEY_ID=...            # No longer needed for Bedrock — using MERGE_GATEWAY_API_KEY
-# AWS_SECRET_ACCESS_KEY=...        # No longer needed for Bedrock — using MERGE_GATEWAY_API_KEY
-MERGE_GATEWAY_API_KEY=mg_...  (user's actual key)
-```
+- **Local development:** Tell the user to run this in their terminal, replacing `mg_YOUR_KEY` with their actual key from [gateway.merge.dev](https://gateway.merge.dev):
+  ```
+  ! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env
+  ```
+  Then verify `.gitignore` includes `.env`. Comment out (do NOT delete) old AWS keys in `.env` (note: these may still be needed for other AWS services):
+  ```
+  # AWS_ACCESS_KEY_ID=...             # Replaced by MERGE_GATEWAY_API_KEY (keep if used for other AWS services)
+  # AWS_SECRET_ACCESS_KEY=...         # Replaced by MERGE_GATEWAY_API_KEY (keep if used for other AWS services)
+  ```
+
+- **Deployed / CI/CD:** Tell the user to add `MERGE_GATEWAY_API_KEY` to their secrets manager or CI/CD environment variables, and remove `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` from their secrets configuration if only used for Bedrock.
+
+**Never** ask the user to paste their API key into the Claude conversation. Always give them a command or instructions they execute themselves.
 
 ### 9. Verify
 

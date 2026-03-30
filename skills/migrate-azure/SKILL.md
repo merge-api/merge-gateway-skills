@@ -18,6 +18,12 @@ Detect the user's stack and show the relevant language.
 
 ## Steps
 
+### 0. Check for Plugin Updates
+
+Before proceeding, ensure the user has the latest version of the Merge Gateway skills by running:
+```
+claude plugin update merge-gateway
+```
 ### 1. Search for Azure OpenAI Usage
 
 Search the project for all Azure OpenAI references:
@@ -146,29 +152,25 @@ The `azure-identity` dependency can be removed if only used for Azure OpenAI.
 
 ### 7. Update Environment Variables
 
-If the user hasn't set up their API key yet, walk them through it:
-1. Direct the user to **https://gateway.merge.dev** to create or copy their API key (starts with `mg_`).
-2. Ask if they're working on a **local project** or a **deployed environment**:
-   - **Local**: Tell them to run this in their terminal: `! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env` (replacing `mg_YOUR_KEY` with their actual key). Then verify `.gitignore` includes `.env`.
-   - **Deployed**: Tell them to add `MERGE_GATEWAY_API_KEY` to their secrets manager or CI/CD environment variables.
-3. **Never** ask the user to paste their API key into the Claude conversation. Always give them a command to run themselves.
+Old Azure keys are replaced by a single `MERGE_GATEWAY_API_KEY`.
 
-```
-# Before
-AZURE_OPENAI_API_KEY=...
-AZURE_OPENAI_ENDPOINT=https://my-resource.openai.azure.com
-AZURE_OPENAI_API_VERSION=2024-02-01
-AZURE_OPENAI_DEPLOYMENT=my-gpt4o-deployment
+**First, ask the user:** "Are you setting this up for **local development** or a **deployed environment**?"
 
-# After
-MERGE_GATEWAY_API_KEY=mg_...  (user's actual key)
-# AZURE_OPENAI_API_KEY=...                               # Replaced by MERGE_GATEWAY_API_KEY
-# AZURE_OPENAI_ENDPOINT=https://my-resource.openai.azure.com  # Replaced by Merge Gateway SDK (default URL)
-# AZURE_OPENAI_API_VERSION=2024-02-01                    # Not needed with Gateway
-# AZURE_OPENAI_DEPLOYMENT=my-gpt4o-deployment            # Use model name directly
-```
+- **Local development:** Tell the user to run this in their terminal, replacing `mg_YOUR_KEY` with their actual key from [gateway.merge.dev](https://gateway.merge.dev):
+  ```
+  ! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env
+  ```
+  Then verify `.gitignore` includes `.env`. Comment out (do NOT delete) old Azure keys in `.env`:
+  ```
+  # AZURE_OPENAI_API_KEY=...          # Replaced by MERGE_GATEWAY_API_KEY
+  # AZURE_OPENAI_ENDPOINT=...         # Replaced by MERGE_GATEWAY_API_KEY
+  # AZURE_OPENAI_API_VERSION=...      # Replaced by MERGE_GATEWAY_API_KEY
+  # AZURE_OPENAI_DEPLOYMENT=...       # Replaced by MERGE_GATEWAY_API_KEY
+  ```
 
-Comment out (do NOT delete) old Azure env vars.
+- **Deployed / CI/CD:** Tell the user to add `MERGE_GATEWAY_API_KEY` to their secrets manager or CI/CD environment variables, and remove the old Azure keys (`AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_VERSION`, `AZURE_OPENAI_DEPLOYMENT`) from their secrets configuration.
+
+**Never** ask the user to paste their API key into the Claude conversation. Always give them a command or instructions they execute themselves.
 
 ### 8. Verify
 
