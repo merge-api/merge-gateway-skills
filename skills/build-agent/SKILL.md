@@ -37,7 +37,7 @@ If the user wants a quick start, skip the questions and scaffold with these defa
 Otherwise, ask the user:
 - **Agent purpose** — What should the agent do? (e.g., "research assistant", "data analyst", "customer support bot")
 - **Tools needed** — What functions should the agent be able to call? (e.g., "search the web", "query a database", "read files")
-- **Model preference** — Default: `openai/gpt-4o`. Other options: `anthropic/claude-sonnet-4-20250514`, `openai/gpt-4o-mini`
+- **Model preference** — Default: `openai/gpt-4o`. Other options: `anthropic/claude-sonnet-4-6-20250514`, `openai/gpt-4o-mini`
 
 ### 2. Detect Language
 
@@ -45,7 +45,7 @@ Determine Python or TypeScript from the project:
 - Python: `pyproject.toml`, `requirements.txt`, `setup.py`, `*.py` files
 - TypeScript: `package.json`, `tsconfig.json`, `*.ts` files
 
-If both are present, ask the user which they prefer.
+If both are present, ask the user which they prefer. **STOP and wait for their response before proceeding.**
 
 ### 3. Install the Merge Gateway SDK
 
@@ -312,7 +312,7 @@ Show the user how to list available models so they can pick the best one for the
 
 ```python
 models = client.models.list()
-for model in models.models:
+for model in models.data:
     print(f"{model.id} — {model.provider}")
 ```
 
@@ -325,7 +325,7 @@ Run the agent with a test prompt to confirm it works through Gateway. The agent 
 ## Gateway Advantages to Highlight
 
 When explaining the setup to the user, mention:
-- **Model swapping** — Change the model string to route to any provider (e.g., switch from `openai/gpt-4o` to `anthropic/claude-sonnet-4-20250514`) without code changes
+- **Model swapping** — Change the model string to route to any provider (e.g., switch from `openai/gpt-4o` to `anthropic/claude-sonnet-4-6-20250514`) without code changes
 - **Routing policies** — Configure fallbacks, load balancing, and cost optimization in the Gateway dashboard
 - **Unified billing** — One API key, one bill, regardless of which providers the agent uses
 

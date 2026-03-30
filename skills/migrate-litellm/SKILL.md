@@ -57,11 +57,39 @@ Check if `MERGE_GATEWAY` or `api-gateway.merge.dev` already exists in the projec
 
 **Path B: LiteLLM Python Library** — The project imports `litellm` directly and calls `litellm.completion()`. This requires replacing the library calls.
 
-Ask the user which path applies, or determine from the search results.
+If the search results make it clear which path applies, proceed with that path. If ambiguous, ask the user: **"Are you using the LiteLLM proxy (OpenAI SDK pointed at localhost) or the LiteLLM Python library (importing litellm directly)?"** **STOP and wait for their response before proceeding.**
 
 ### 4A. Migrate LiteLLM Proxy Client
 
-If the project uses the OpenAI SDK pointed at a LiteLLM proxy, just swap the URL and key:
+If the project uses the OpenAI SDK pointed at a LiteLLM proxy, just swap the URL and key.
+
+**Choose your migration path:** Ask the user whether they want the quick migration (Option A) or the full migration (Option B).
+
+**STOP here and wait for the user's response.** Do NOT proceed until they answer. Once they answer, follow ONLY the matching option below:
+
+**Option A — Quick migration (keep OpenAI SDK):** Since LiteLLM proxy clients already use the OpenAI SDK, just change the base URL and API key.
+
+Python:
+```python
+# Quick path — swap URL and key, all chat.completions.create() calls work unchanged
+from openai import OpenAI
+client = OpenAI(
+    api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url="https://api-gateway.merge.dev/v1/openai",
+)
+```
+
+TypeScript:
+```typescript
+// Quick path — swap URL and key, all chat.completions.create() calls work unchanged
+import OpenAI from "openai";
+const client = new OpenAI({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseURL: "https://api-gateway.merge.dev/v1/openai",
+});
+```
+
+**Option B — Full migration (native Merge Gateway SDK):** Switch to the Merge Gateway SDK for full access to tags, routing metadata, and model discovery.
 
 Python:
 ```python
@@ -119,7 +147,7 @@ const client = new MergeGateway({
 - `gpt-4o` → `openai/gpt-4o`
 - `gpt-4o-mini` → `openai/gpt-4o-mini`
 - `claude-3-5-haiku-20241022` → `anthropic/claude-3-5-haiku-20241022`
-- `claude-sonnet-4-20250514` → `anthropic/claude-sonnet-4-20250514`
+- `claude-sonnet-4-6-20250514` → `anthropic/claude-sonnet-4-6-20250514`
 
 **LiteLLM-specific prefixes (need remapping):**
 - `bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0` → `anthropic/claude-3-5-sonnet-20241022` (strip Bedrock prefix and ID format)
@@ -197,14 +225,21 @@ response = litellm.completion(
 for chunk in response:
     print(chunk.choices[0].delta.content or "", end="")
 
-# After
+# After — each chunk has accumulated text, print only new portion
 response = client.responses.create(
     model="openai/gpt-4o",
     input=[{"type": "message", "role": msg["role"], "content": msg["content"]} for msg in messages],
     stream=True,
 )
-for event in response:
-    print(event, end="")
+prev_text = ""
+for chunk in response:
+    if chunk.get("object") == "response.stream":
+        content = chunk.get("output", [{}])[0].get("content", [])
+        if content and content[0].get("type") == "text":
+            new_text = content[0].get("text", "")
+            print(new_text[len(prev_text):], end="", flush=True)
+            prev_text = new_text
+print()
 ```
 
 **Embedding migration:**

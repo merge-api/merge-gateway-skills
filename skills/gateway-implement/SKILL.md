@@ -159,7 +159,7 @@ Update model names to provider-prefixed format:
 - `gpt-4o-mini` → `openai/gpt-4o-mini`
 - `gpt-4-turbo` → `openai/gpt-4-turbo`
 - `gpt-3.5-turbo` → `openai/gpt-3.5-turbo`
-- `claude-sonnet-4-20250514` → `anthropic/claude-sonnet-4-20250514`
+- `claude-sonnet-4-6-20250514` → `anthropic/claude-sonnet-4-6-20250514`
 - `claude-3-5-haiku-20241022` → `anthropic/claude-3-5-haiku-20241022`
 - `gemini-2.0-flash` → `google/gemini-2.0-flash`
 
@@ -271,41 +271,51 @@ const embedding = response.data[0].embedding;
 
 The Gateway SDK supports streaming responses via Server-Sent Events:
 
+Each stream chunk contains the **accumulated** text so far. Track the previous text and print only the new portion.
+
 Python:
 ```python
 response = client.responses.create(
-    model="openai/gpt-4o",
+    model="openai/gpt-4o-mini",
     input=[{"type": "message", "role": "user", "content": "Tell me a story."}],
     stream=True,
 )
 
-with response as stream:
-    for event in stream:
-        if "delta" in event:
-            print(event["delta"].get("text", ""), end="", flush=True)
+prev_text = ""
+for chunk in response:
+    if chunk.get("object") == "response.stream":
+        content = chunk.get("output", [{}])[0].get("content", [])
+        if content and content[0].get("type") == "text":
+            new_text = content[0].get("text", "")
+            print(new_text[len(prev_text):], end="", flush=True)
+            prev_text = new_text
 print()
 ```
 
 TypeScript:
 ```typescript
 const stream = await client.responses.create({
-  model: "openai/gpt-4o",
+  model: "openai/gpt-4o-mini",
   input: [{ type: "message", role: "user", content: "Tell me a story." }],
   stream: true,
 });
 
-for await (const event of stream) {
-  const delta = event["delta"] as Record<string, unknown> | undefined;
-  if (delta?.text) {
-    process.stdout.write(String(delta.text));
+let prevText = "";
+for await (const chunk of stream) {
+  if (chunk.object === "response.stream") {
+    const output = (chunk.output as any[])?.[0];
+    const content = output?.content?.[0];
+    if (content?.type === "text") {
+      const newText = content.text as string;
+      process.stdout.write(newText.slice(prevText.length));
+      prevText = newText;
+    }
   }
 }
 console.log();
 ```
 
-> **Note:** Stream events are raw JSON objects (dicts in Python, `Record<string, unknown>` in TypeScript). The event structure follows the SSE format from the API.
-
-Ask the user if they want to run the test script.
+Ask the user if they want to run the test script. **STOP and wait for their response before proceeding.**
 
 ### 8. Error Handling
 

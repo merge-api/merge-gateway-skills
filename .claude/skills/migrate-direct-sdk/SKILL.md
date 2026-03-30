@@ -55,6 +55,36 @@ For each provider detected in step 1, apply the corresponding migration below. I
 
 This is the simplest migration — swap to the Merge Gateway SDK.
 
+**Choose your migration path:** Ask the user whether they want the quick migration (Option A) or the full migration (Option B).
+
+**STOP here and wait for the user's response.** Do NOT proceed until they answer. Once they answer, follow ONLY the matching option below:
+
+**Option A — Quick migration (keep OpenAI SDK):** Change two lines and all your existing `chat.completions.create()` calls work through Gateway immediately. No API call changes needed.
+
+Python:
+```python
+# Just change the import config — all chat.completions.create() calls work unchanged
+from openai import OpenAI
+client = OpenAI(
+    api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url="https://api-gateway.merge.dev/v1/openai",
+)
+# Model names need provider prefix: "gpt-4o" → "openai/gpt-4o"
+```
+
+TypeScript:
+```typescript
+// Just change the config — all chat.completions.create() calls work unchanged
+import OpenAI from "openai";
+const client = new OpenAI({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseURL: "https://api-gateway.merge.dev/v1/openai",
+});
+// Model names need provider prefix: "gpt-4o" → "openai/gpt-4o"
+```
+
+**Option B — Full migration (native Merge Gateway SDK):** Switch to the Merge Gateway SDK for full access to tags, routing metadata, multi-model routing, and model discovery.
+
 Python:
 ```python
 # Before
@@ -121,7 +151,7 @@ const client = new MergeGateway({
 ```
 
 Prefix all model names:
-- `claude-sonnet-4-20250514` → `anthropic/claude-sonnet-4-20250514`
+- `claude-sonnet-4-6-20250514` → `anthropic/claude-sonnet-4-6-20250514`
 - `claude-3-5-haiku-20241022` → `anthropic/claude-3-5-haiku-20241022`
 - `claude-3-opus-20240229` → `anthropic/claude-3-opus-20240229`
 

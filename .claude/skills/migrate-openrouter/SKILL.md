@@ -42,6 +42,34 @@ Before making changes, check if `MERGE_GATEWAY` or `api-gateway.merge.dev` alrea
 
 Replace OpenRouter clients with the Merge Gateway SDK. The SDK handles the base URL automatically — no URL configuration needed.
 
+**Choose your migration path:** Ask the user whether they want the quick migration (Option A) or the full migration (Option B).
+
+**STOP here and wait for the user's response.** Do NOT proceed until they answer. Once they answer, follow ONLY the matching option below:
+
+**Option A — Quick migration (keep OpenAI SDK):** Since OpenRouter already uses the OpenAI SDK, just change the base URL and API key.
+
+Python:
+```python
+# Quick path — swap URL and key, all chat.completions.create() calls work unchanged
+from openai import OpenAI
+client = OpenAI(
+    api_key=os.environ["MERGE_GATEWAY_API_KEY"],
+    base_url="https://api-gateway.merge.dev/v1/openai",
+)
+```
+
+TypeScript:
+```typescript
+// Quick path — swap URL and key, all chat.completions.create() calls work unchanged
+import OpenAI from "openai";
+const client = new OpenAI({
+  apiKey: process.env.MERGE_GATEWAY_API_KEY!,
+  baseURL: "https://api-gateway.merge.dev/v1/openai",
+});
+```
+
+**Option B — Full migration (native Merge Gateway SDK):** Switch to the Merge Gateway SDK for full access to tags, routing metadata, and model discovery.
+
 Python:
 ```python
 # Before
@@ -77,7 +105,7 @@ const client = new MergeGateway({
 OpenRouter uses `provider/model` format — the same format Gateway uses. Most model names transfer directly:
 
 - `openai/gpt-4o` → `openai/gpt-4o` (no change)
-- `anthropic/claude-3.5-sonnet` → `anthropic/claude-sonnet-4-20250514` (update to latest)
+- `anthropic/claude-3.5-sonnet` → `anthropic/claude-sonnet-4-6-20250514` (update to latest)
 - `google/gemini-pro` → `google/gemini-2.0-flash` (update to latest)
 - `meta-llama/llama-3.1-70b-instruct` → `meta-llama/llama-3.1-70b-instruct` (check availability)
 
