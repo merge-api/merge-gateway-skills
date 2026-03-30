@@ -7,7 +7,7 @@ Migrate from calling OpenAI, Anthropic, or Google directly to routing through Me
 
 The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
 
-- **Python:** `pip install merge-gateway-sdk`
+- **Python:** `pip3 install merge-gateway-sdk`
 - **TypeScript/Node:** `npm install merge-gateway-sdk`
 
 Detect the user's stack and show the relevant language.
@@ -183,7 +183,7 @@ Google model name mapping:
 - `chat.send_message("text")` → append to input array and call `client.responses.create()`
 - Multi-turn: maintain an `input` array instead of using `model.start_chat()`
 
-After migration, the `google-generativeai` / `@google/generative-ai` dependency can be removed if it's no longer used elsewhere. Install `merge-gateway-sdk` if not already present (Python: `pip install merge-gateway-sdk`, TypeScript: `npm install merge-gateway-sdk`).
+After migration, the `google-generativeai` / `@google/generative-ai` dependency can be removed if it's no longer used elsewhere. Install `merge-gateway-sdk` if not already present (Python: `pip3 install merge-gateway-sdk`, TypeScript: `npm install merge-gateway-sdk`).
 
 **Embeddings migration:**
 
@@ -214,6 +214,11 @@ const embedding = response.data[0].embedding;
 
 Replace multiple provider keys with a single Gateway key:
 
+If the user hasn't set up their API key yet, walk them through it:
+1. Direct them to **https://gateway.merge.dev** to create or copy their API key (starts with `mg_`).
+2. Ask the user to paste their key, then write it directly to the `.env` file for them.
+3. Never tell the user to manually edit the `.env` — do it for them after they provide the key.
+
 ```
 # Before
 OPENAI_API_KEY=sk-...
@@ -221,7 +226,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 GOOGLE_API_KEY=AI...
 
 # After
-MERGE_GATEWAY_API_KEY=mg_your_api_key_here
+MERGE_GATEWAY_API_KEY=mg_...  (user's actual key)
 MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 # OPENAI_API_KEY=sk-...          # Replaced by MERGE_GATEWAY_API_KEY
 # ANTHROPIC_API_KEY=sk-ant-...   # Replaced by MERGE_GATEWAY_API_KEY
@@ -237,7 +242,10 @@ Generate a test script matching the SDK(s) that were migrated:
 Python (`test_gateway.py`):
 ```python
 import os
+from dotenv import load_dotenv
 from merge_gateway import MergeGateway
+
+load_dotenv()
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
@@ -245,15 +253,20 @@ client = MergeGateway(
 )
 
 response = client.responses.create(
-    model="openai/gpt-4o",
-    input=[{"type": "message", "role": "user", "content": "Say 'Migration successful!' and nothing else."}],
+    model="openai/gpt-4o-mini",
+    input=[{"type": "message", "role": "user", "content": "What is 2 + 2? Reply with just the number."}],
 )
-print(response.output[0].content[0].text)
+print("Gateway response:", response.output[0].content[0].text)
+print("Model used:", response.model)
+print("Migration verified successfully!")
 ```
 
 TypeScript (`test_gateway.ts`):
 ```typescript
+import dotenv from "dotenv";
 import { MergeGateway } from "merge-gateway-sdk";
+
+dotenv.config();
 
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
@@ -262,10 +275,12 @@ const client = new MergeGateway({
 
 async function main() {
   const response = await client.responses.create({
-    model: "openai/gpt-4o",
-    input: [{ type: "message", role: "user", content: "Say 'Migration successful!' and nothing else." }],
+    model: "openai/gpt-4o-mini",
+    input: [{ type: "message", role: "user", content: "What is 2 + 2? Reply with just the number." }],
   });
-  console.log(response.output[0].content[0].text);
+  console.log("Gateway response:", response.output[0].content[0].text);
+  console.log("Model used:", response.model);
+  console.log("Migration verified successfully!");
 }
 
 main();

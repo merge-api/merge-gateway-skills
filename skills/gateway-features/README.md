@@ -13,6 +13,6 @@ After initial Gateway integration, when users want to:
 
 ## Prerequisites
 
-- Merge Gateway SDK installed (`pip install merge-gateway-sdk`)
+- Merge Gateway SDK installed (`pip3 install merge-gateway-sdk`)
 - `MERGE_GATEWAY_API_KEY` and `MERGE_GATEWAY_BASE_URL` configured
 - Basic integration working (run `gateway-implement` first)

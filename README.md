@@ -1,6 +1,6 @@
 # Merge Gateway — Claude Code Skills
 
-A Claude Code plugin with skills for integrating with, building on, and migrating to [Merge Gateway](https://api-gateway.merge.dev).
+A Claude Code plugin with skills for integrating with, building on, and migrating to [Merge Gateway](https://docs.merge.dev/merge-gateway).
 
 ## Installation
 
@@ -85,7 +85,7 @@ Or just describe what you want — Claude will pick the right skill:
 
 ## What You'll Need
 
-- A Merge Gateway API key (`mg_...`) — get one from the [Gateway dashboard](https://api-gateway.merge.dev)
+- A Merge Gateway API key (`mg_...`) — get one from the [Gateway dashboard](https://gateway.merge.dev)
 - Your Gateway base URL (default: `https://api-gateway.merge.dev`)
 
 ## How It Works

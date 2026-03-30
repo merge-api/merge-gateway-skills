@@ -7,7 +7,7 @@ Migrate from boto3 Bedrock calls to the Merge Gateway SDK. This is a significant
 
 The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
 
-- **Python:** `pip install merge-gateway-sdk`
+- **Python:** `pip3 install merge-gateway-sdk`
 - **TypeScript/Node:** `npm install merge-gateway-sdk`
 
 **Note:** Bedrock itself uses boto3 (Python), but the "After" migration code uses the Merge Gateway SDK which is available in both languages. If the project is TypeScript-based and was calling Bedrock via a Python microservice or API layer, the replacement code can be written in TypeScript directly.
@@ -36,7 +36,7 @@ Check if `merge-gateway-sdk` is already in the project's dependencies. If not, a
 
 Python:
 ```bash
-pip install merge-gateway-sdk
+pip3 install merge-gateway-sdk
 ```
 
 TypeScript/Node:
@@ -240,10 +240,16 @@ Ask the user if `boto3` is used for anything other than Bedrock. If not:
 If `boto3` is used for other AWS services, only remove Bedrock-specific code.
 
 Comment out (do NOT delete) old env vars:
+
+If the user hasn't set up their API key yet, walk them through it:
+1. Direct them to **https://gateway.merge.dev** to create or copy their API key (starts with `mg_`).
+2. Ask the user to paste their key, then write it directly to the `.env` file for them.
+3. Never tell the user to manually edit the `.env` — do it for them after they provide the key.
+
 ```
 # AWS_ACCESS_KEY_ID=...            # No longer needed for Bedrock — using MERGE_GATEWAY_API_KEY
 # AWS_SECRET_ACCESS_KEY=...        # No longer needed for Bedrock — using MERGE_GATEWAY_API_KEY
-MERGE_GATEWAY_API_KEY=mg_your_api_key_here
+MERGE_GATEWAY_API_KEY=mg_...  (user's actual key)
 MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 ```
 
@@ -254,7 +260,10 @@ Generate a test script:
 Python (`test_gateway.py`):
 ```python
 import os
+from dotenv import load_dotenv
 from merge_gateway import MergeGateway
+
+load_dotenv()
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
@@ -262,15 +271,20 @@ client = MergeGateway(
 )
 
 response = client.responses.create(
-    model="openai/gpt-4o",
-    input=[{"type": "message", "role": "user", "content": "Say 'Bedrock migration successful!' and nothing else."}],
+    model="openai/gpt-4o-mini",
+    input=[{"type": "message", "role": "user", "content": "What is 2 + 2? Reply with just the number."}],
 )
-print(response.output[0].content[0].text)
+print("Gateway response:", response.output[0].content[0].text)
+print("Model used:", response.model)
+print("Migration verified successfully!")
 ```
 
 TypeScript (`test_gateway.ts`):
 ```typescript
+import dotenv from "dotenv";
 import { MergeGateway } from "merge-gateway-sdk";
+
+dotenv.config();
 
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
@@ -279,10 +293,12 @@ const client = new MergeGateway({
 
 async function main() {
   const response = await client.responses.create({
-    model: "openai/gpt-4o",
-    input: [{ type: "message", role: "user", content: "Say 'Bedrock migration successful!' and nothing else." }],
+    model: "openai/gpt-4o-mini",
+    input: [{ type: "message", role: "user", content: "What is 2 + 2? Reply with just the number." }],
   });
-  console.log(response.output[0].content[0].text);
+  console.log("Gateway response:", response.output[0].content[0].text);
+  console.log("Model used:", response.model);
+  console.log("Migration verified successfully!");
 }
 
 main();
