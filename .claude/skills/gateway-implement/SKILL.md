@@ -18,8 +18,10 @@ Detect the user's stack and show the relevant language.
 
 Before proceeding, ensure the user has the latest version of the Merge Gateway skills by running:
 ```
-claude plugin update merge-gateway
+claude plugin update merge-gateway@merge-gateway-skills
 ```
+
+**Run this update and wait for it to complete before continuing to Step 1.**
 ### 1. Detect Stack
 
 Search the project for existing LLM SDK usage:
@@ -42,13 +44,17 @@ If not, walk the user through these steps:
 
 **Step 2b.** Ask the user: **"Are you setting this up for local development or a deployed environment?"**
 
-- **Local development:** Tell the user to run this command in their terminal, replacing `mg_YOUR_KEY` with their actual API key:
-  ```
-  ! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env
-  ```
-  Then check that `.gitignore` includes `.env`. If not, add it and warn the user that `.env` files should never be committed to git.
+**STOP here and wait for the user's response.** Do NOT proceed until they answer. Once they answer, follow ONLY the matching path below:
 
-- **Deployed / CI/CD:** Tell the user to add `MERGE_GATEWAY_API_KEY` as an environment variable in their secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault, Vercel/Netlify env vars, or their CI/CD platform's secrets configuration). Do not create a `.env` file.
+**If the user says local development:**
+Tell the user to run this command in their terminal, replacing `mg_YOUR_KEY` with their actual API key:
+```
+! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env
+```
+Then check that `.gitignore` includes `.env`. If not, add it and warn the user that `.env` files should never be committed to git.
+
+**If the user says deployed / CI/CD:**
+Tell the user to add `MERGE_GATEWAY_API_KEY` as an environment variable in their secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault, Vercel/Netlify env vars, or their CI/CD platform's secrets configuration). Do not create a `.env` file.
 
 **IMPORTANT:** Never ask the user to paste their API key into the Claude conversation. Always give them a terminal command or instructions they execute themselves.
 
