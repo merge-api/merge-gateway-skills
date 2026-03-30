@@ -53,19 +53,24 @@ npm install merge-gateway-sdk
 
 ### 4. Scaffold the Agent
 
-Create the agent file with these components:
+Create the agent files. The agent should support **interactive multi-turn conversation** and **error handling**.
 
 **Python agent (`agent.py`):**
 
 ```python
 import json
 import os
-from merge_gateway import MergeGateway
+from dotenv import load_dotenv
+from merge_gateway import MergeGateway, APIError
+
+load_dotenv()
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
+
+MODEL = "openai/gpt-4o"
+SYSTEM_PROMPT = "You are a helpful assistant."
 
 # --- Tool definitions ---
 
@@ -95,7 +100,6 @@ TOOL_REGISTRY = {
 }
 
 def execute_tool(name: str, arguments: dict) -> str:
-    """Execute a tool by name and return the result as a JSON string."""
     func = TOOL_REGISTRY.get(name)
     if not func:
         return json.dumps({"error": f"Unknown tool: {name}"})
@@ -107,51 +111,77 @@ def execute_tool(name: str, arguments: dict) -> str:
 
 # --- Agent loop ---
 
-def run_agent(user_message: str, system_prompt: str = "You are a helpful assistant.") -> str:
-    input_messages = [
-        {"type": "message", "role": "system", "content": system_prompt},
-        {"type": "message", "role": "user", "content": user_message},
-    ]
+def run_agent(user_message: str, conversation: list) -> str:
+    conversation.append({"type": "message", "role": "user", "content": user_message})
 
     while True:
-        response = client.responses.create(
-            model="openai/gpt-4o",
-            input=input_messages,
-            tools=tools,
-        )
-        assistant_msg = response.output[0]
+        try:
+            response = client.responses.create(
+                model=MODEL,
+                input=conversation,
+                tools=tools,
+            )
+        except APIError as e:
+            return f"API error ({e.status_code}): {e.message}"
 
-        # Check if the model wants to call a tool
+        assistant_msg = response.output[0]
         tool_calls = [block for block in assistant_msg.content if block.type == "tool_use"]
 
         if not tool_calls:
-            # No tool calls — extract text response
             text_blocks = [block for block in assistant_msg.content if block.type == "text"]
-            return text_blocks[0].text if text_blocks else ""
+            reply = text_blocks[0].text if text_blocks else ""
+            conversation.append({"type": "message", "role": "assistant", "content": reply})
+            return reply
 
-        # Process each tool call and send results back
         for tool_call in tool_calls:
             result = execute_tool(tool_call.name, tool_call.input or {})
-            input_messages.append({
+            conversation.append({
                 "type": "tool_result",
                 "tool_use_id": tool_call.id,
                 "content": result,
             })
 
+# --- Interactive mode ---
+
+def main():
+    print(f"Agent ready (model: {MODEL}). Type 'quit' to exit.\n")
+    conversation = [{"type": "message", "role": "system", "content": SYSTEM_PROMPT}]
+
+    while True:
+        try:
+            user_input = input("You: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\nGoodbye!")
+            break
+
+        if not user_input:
+            continue
+        if user_input.lower() in ("quit", "exit"):
+            print("Goodbye!")
+            break
+
+        reply = run_agent(user_input, conversation)
+        print(f"Agent: {reply}\n")
+
 if __name__ == "__main__":
-    response = run_agent("Your test prompt here")
-    print(response)
+    main()
 ```
 
 **TypeScript agent (`agent.ts`):**
 
 ```typescript
-import { MergeGateway } from "merge-gateway-sdk";
+import { MergeGateway, APIError } from "merge-gateway-sdk";
+import dotenv from "dotenv";
+import * as readline from "readline";
+
+dotenv.config();
 
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
+
+const MODEL = "openai/gpt-4o";
+const SYSTEM_PROMPT = "You are a helpful assistant.";
 
 // --- Tool definitions ---
 
@@ -192,33 +222,37 @@ function executeTool(name: string, args: Record<string, unknown>): string {
 
 // --- Agent loop ---
 
-async function runAgent(userMessage: string, systemPrompt = "You are a helpful assistant."): Promise<string> {
-  const inputMessages: any[] = [
-    { type: "message", role: "system", content: systemPrompt },
-    { type: "message", role: "user", content: userMessage },
-  ];
+async function runAgent(userMessage: string, conversation: any[]): Promise<string> {
+  conversation.push({ type: "message", role: "user", content: userMessage });
 
   while (true) {
-    const response = await client.responses.create({
-      model: "openai/gpt-4o",
-      input: inputMessages,
-      tools,
-    });
-    const assistantMsg = response.output[0];
+    let response;
+    try {
+      response = await client.responses.create({
+        model: MODEL,
+        input: conversation,
+        tools,
+      });
+    } catch (e) {
+      if (e instanceof APIError) {
+        return `API error (${e.statusCode}): ${e.message}`;
+      }
+      throw e;
+    }
 
-    // Check if the model wants to call a tool
+    const assistantMsg = response.output[0];
     const toolCalls = assistantMsg.content.filter((block: any) => block.type === "tool_use");
 
     if (toolCalls.length === 0) {
-      // No tool calls — extract text response
       const textBlocks = assistantMsg.content.filter((block: any) => block.type === "text");
-      return textBlocks[0]?.text ?? "";
+      const reply = textBlocks[0]?.text ?? "";
+      conversation.push({ type: "message", role: "assistant", content: reply });
+      return reply;
     }
 
-    // Process each tool call and send results back
     for (const toolCall of toolCalls) {
       const result = executeTool(toolCall.name, toolCall.input ?? {});
-      inputMessages.push({
+      conversation.push({
         type: "tool_result",
         tool_use_id: toolCall.id,
         content: result,
@@ -227,9 +261,32 @@ async function runAgent(userMessage: string, systemPrompt = "You are a helpful a
   }
 }
 
-// --- Main ---
+// --- Interactive mode ---
 
-runAgent("Your test prompt here").then(console.log);
+async function main() {
+  console.log(`Agent ready (model: ${MODEL}). Type 'quit' to exit.\n`);
+  const conversation: any[] = [{ type: "message", role: "system", content: SYSTEM_PROMPT }];
+
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+
+  const prompt = (): Promise<string> =>
+    new Promise((resolve) => rl.question("You: ", resolve));
+
+  while (true) {
+    const userInput = (await prompt()).trim();
+    if (!userInput) continue;
+    if (["quit", "exit"].includes(userInput.toLowerCase())) {
+      console.log("Goodbye!");
+      rl.close();
+      break;
+    }
+
+    const reply = await runAgent(userInput, conversation);
+    console.log(`Agent: ${reply}\n`);
+  }
+}
+
+main();
 ```
 
 ### 5. Customize for the User's Requirements
@@ -239,10 +296,23 @@ Based on the user's answers from step 1:
 - Write meaningful tool implementations (or stubs with TODO comments if external APIs are needed)
 - Set an appropriate system prompt for the agent's purpose
 - Use the user's preferred model
+- If the user wants a specific tool (e.g., "web search", "database query"), implement the full tool definition and a working or stubbed implementation
 
-### 6. Verify
+### 6. Model Discovery
 
-Offer to run the agent with a test prompt to confirm it works through Gateway.
+Show the user how to list available models so they can pick the best one for their agent:
+
+```python
+models = client.models.list()
+for model in models.models:
+    print(f"{model.id} — {model.provider}")
+```
+
+Remind them they can swap models anytime by changing the `MODEL` constant — a key Gateway advantage.
+
+### 7. Verify
+
+Run the agent with a test prompt to confirm it works through Gateway. The agent should start in interactive mode and respond to user input.
 
 ## Gateway Advantages to Highlight
 
@@ -254,5 +324,5 @@ When explaining the setup to the user, mention:
 ## Cross-Cutting Rules
 
 - **Provider-prefixed models** — ALL model names must use `provider/model` format (e.g., `openai/gpt-4o`, not `gpt-4o`).
-- **Env vars** — Always use `MERGE_GATEWAY_API_KEY` and `MERGE_GATEWAY_BASE_URL` environment variables, never hardcoded values.
-- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
+- **Env vars** — Always use the `MERGE_GATEWAY_API_KEY` environment variable, never hardcode API keys.
+- **Base URL** — The SDK defaults to `https://api-gateway.merge.dev/v1`. Only pass `base_url`/`baseUrl` if the user has a custom gateway endpoint.

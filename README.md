@@ -86,7 +86,6 @@ Or just describe what you want — Claude will pick the right skill:
 ## What You'll Need
 
 - A Merge Gateway API key (`mg_...`) — get one from the [Gateway dashboard](https://gateway.merge.dev)
-- Your Gateway base URL (default: `https://api-gateway.merge.dev`)
 
 ## How It Works
 

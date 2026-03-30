@@ -5,10 +5,10 @@ Add Merge Gateway to an existing project. This skill detects your stack, install
 ## What it does
 
 - Scans your project for existing LLM SDK usage (OpenAI, Anthropic, LangChain, etc.)
-- Installs the Merge Gateway SDK (`merge-gateway` for Python, `merge-gateway-sdk` for Node)
+- Installs the Merge Gateway SDK (`merge-gateway-sdk` for Python, `merge-gateway-sdk` for Node)
 - Migrates client constructors and API calls to the Merge Gateway unified format
 - Converts model names to the `provider/model` format (e.g., `openai/gpt-4o`)
-- Sets up `MERGE_GATEWAY_API_KEY` and `MERGE_GATEWAY_BASE_URL` environment variables
+- Sets up the `MERGE_GATEWAY_API_KEY` environment variable
 - Generates a test script to verify the integration
 
 ## Install

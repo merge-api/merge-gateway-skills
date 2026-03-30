@@ -75,7 +75,6 @@ from merge_gateway import MergeGateway
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
 response = client.responses.create(
@@ -99,7 +98,6 @@ import { MergeGateway } from "merge-gateway-sdk";
 
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 ```
 
@@ -142,7 +140,6 @@ import os
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
 response = client.responses.create(
@@ -172,7 +169,6 @@ from merge_gateway import MergeGateway
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
 response = await asyncio.to_thread(
@@ -233,9 +229,11 @@ Search for and remove LiteLLM-specific parameters:
 ### 6. Update Environment Variables
 
 If the user hasn't set up their API key yet, walk them through it:
-1. Direct them to **https://gateway.merge.dev** to create or copy their API key (starts with `mg_`).
-2. Ask the user to paste their key, then write it directly to the `.env` file for them.
-3. Never tell the user to manually edit the `.env` — do it for them after they provide the key.
+1. Direct the user to **https://gateway.merge.dev** to create or copy their API key (starts with `mg_`).
+2. Ask if they're working on a **local project** or a **deployed environment**:
+   - **Local**: Tell them to run this in their terminal: `! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env` (replacing `mg_YOUR_KEY` with their actual key). Then verify `.gitignore` includes `.env`.
+   - **Deployed**: Tell them to add `MERGE_GATEWAY_API_KEY` to their secrets manager or CI/CD environment variables.
+3. **Never** ask the user to paste their API key into the Claude conversation. Always give them a command to run themselves.
 
 ```
 # Before
@@ -247,9 +245,8 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 # After
 MERGE_GATEWAY_API_KEY=mg_...  (user's actual key)
-MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 # LITELLM_API_KEY=sk-...              # Replaced by MERGE_GATEWAY_API_KEY
-# LITELLM_BASE_URL=http://localhost:4000  # Replaced by MERGE_GATEWAY_BASE_URL
+# LITELLM_BASE_URL=http://localhost:4000  # Replaced by Merge Gateway SDK (default URL)
 # OPENAI_API_KEY=sk-...               # No longer needed — Gateway manages provider keys
 # ANTHROPIC_API_KEY=sk-ant-...        # No longer needed — Gateway manages provider keys
 ```
@@ -294,7 +291,6 @@ load_dotenv()
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
 response = client.responses.create(
@@ -315,7 +311,6 @@ dotenv.config();
 
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 
 async function main() {
@@ -337,5 +332,5 @@ main();
 - **Never delete infrastructure without asking** — LiteLLM proxy Docker/K8s configs should be flagged, not removed.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
+- **Base URL** — The SDK defaults to `https://api-gateway.merge.dev/v1`. Only pass `base_url`/`baseUrl` if the user has a custom gateway endpoint.
 - **Remove `litellm` dependency last** — Only after all `litellm` imports are removed.
