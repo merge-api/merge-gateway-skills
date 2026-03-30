@@ -1,3 +1,8 @@
+---
+description: Integrate Merge Gateway into an existing project. Detect the user's stack, install the SDK, update configuration, and verify the integration works.
+allowed-tools: Read, Grep, Glob, Edit, Write, Bash
+---
+
 # Integrate Merge Gateway
 
 Guide a developer through adding Merge Gateway to an existing project. Detect their stack, install the Merge Gateway SDK, update configuration, and verify the integration works.
@@ -29,22 +34,21 @@ Report what you found to the user before proceeding.
 
 Check if `MERGE_GATEWAY_API_KEY` is already set in the environment or `.env` file. If it is, confirm with the user and move on.
 
-If not, walk the user through these exact steps:
+If not, walk the user through these steps:
 
 **Step 2a.** Tell the user to go to **https://gateway.merge.dev** and create or copy their API key (it starts with `mg_`).
 
-**Step 2b.** Ask the user to paste their API key. Once they provide it, write it directly to the `.env` file for them using the Edit or Write tool:
+**Step 2b.** Ask the user: **"Are you setting this up for local development or a deployed environment?"**
 
-```
-MERGE_GATEWAY_API_KEY=<the key the user provided>
-MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
-```
+- **Local development:** Tell the user to run this command in their terminal, replacing `mg_YOUR_KEY` with their actual API key:
+  ```
+  ! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env
+  ```
+  Then check that `.gitignore` includes `.env`. If not, add it and warn the user that `.env` files should never be committed to git.
 
-If a `.env` file already exists, append these lines to it. If one doesn't exist, create it.
+- **Deployed / CI/CD:** Tell the user to add `MERGE_GATEWAY_API_KEY` as an environment variable in their secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault, Vercel/Netlify env vars, or their CI/CD platform's secrets configuration). Do not create a `.env` file.
 
-**Step 2c.** Check that `.gitignore` includes `.env`. If not, add it and warn the user that `.env` files should never be committed to git.
-
-**IMPORTANT:** Do not tell the user to manually edit their `.env` file. Write it for them after they provide the key. Never log, echo, or display the full API key in terminal output.
+**IMPORTANT:** Never ask the user to paste their API key into the Claude conversation. Always give them a terminal command or instructions they execute themselves.
 
 ### 3. Install the Merge Gateway SDK
 
@@ -73,7 +77,6 @@ from merge_gateway import MergeGateway
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 ```
 
@@ -88,7 +91,6 @@ import { MergeGateway } from "merge-gateway-sdk";
 
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 ```
 
@@ -159,21 +161,16 @@ If a centralized config exists, update the Gateway settings there and have call 
 
 ### 6. Set Up Environment Variables
 
-If the `.env` file was already set up in Step 2, verify it contains both `MERGE_GATEWAY_API_KEY` and `MERGE_GATEWAY_BASE_URL`. If not, add the missing variable. The `.env` should have:
+Verify that `MERGE_GATEWAY_API_KEY` is configured (either in `.env` for local dev, or in the user's secrets manager for deployed environments — this was done in Step 2).
 
-```
-MERGE_GATEWAY_API_KEY=mg_...  (the user's actual key from Step 2)
-MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
-```
+The SDK automatically connects to `https://api-gateway.merge.dev/v1` — no base URL configuration needed.
 
-**IMPORTANT:** `MERGE_GATEWAY_BASE_URL` must NOT include `/v1`. The `/v1` is appended in code. If you find the env var already set with `/v1`, strip it to avoid double-pathing.
-
-Verify `.gitignore` includes `.env`.
-
-Comment out (do NOT delete) any old provider API key env vars:
+If there are old provider API key env vars, comment them out (do NOT delete):
 ```
 # OPENAI_API_KEY=sk-...  # Replaced by MERGE_GATEWAY_API_KEY
 ```
+
+If the user has a `.env` file, verify `.gitignore` includes `.env`.
 
 ### 7. Verify Integration
 
@@ -189,7 +186,6 @@ load_dotenv()
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
 response = client.responses.create(
@@ -212,7 +208,6 @@ dotenv.config();
 
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 
 async function main() {
@@ -232,7 +227,6 @@ main();
 
 **Run the test script** and confirm it prints a response. If it fails, check:
 - Is `MERGE_GATEWAY_API_KEY` set correctly in `.env`?
-- Is `MERGE_GATEWAY_BASE_URL` set to `https://api-gateway.merge.dev` (without `/v1`)?
 - Is `dotenv` / `python-dotenv` installed for loading `.env` files?
 
 **Embeddings migration:**
@@ -311,7 +305,6 @@ from merge_gateway import MergeGateway, AuthenticationError, BadRequestError, Ra
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
 try:
@@ -343,7 +336,6 @@ import {
 
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 
 try {
@@ -380,6 +372,6 @@ All exceptions inherit from `MergeGatewayError` and have `.message`, `.status_co
 ## Cross-Cutting Rules
 
 - **Never delete old configuration** — comment it out with a note about the replacement.
-- **Idempotency** — Before making changes, check if `MERGE_GATEWAY_BASE_URL` or `api-gateway.merge.dev` is already present. If so, skip those files and tell the user.
+- **Idempotency** — Before making changes, check if `MERGE_GATEWAY_API_KEY` or `MergeGateway` is already present. If so, skip those files and tell the user.
 - **Provider-prefixed models** — ALL model names must use the `provider/model` format when going through Gateway.
-- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code: `MERGE_GATEWAY_BASE_URL + "/v1"`. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
+- **Base URL** — The SDK defaults to `https://api-gateway.merge.dev/v1`. Only pass `base_url`/`baseUrl` if the user has a custom gateway endpoint.

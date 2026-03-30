@@ -90,7 +90,6 @@ import os
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
 response = client.responses.create(
@@ -106,7 +105,6 @@ import { MergeGateway } from "merge-gateway-sdk";
 
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 
 const response = await client.responses.create({
@@ -242,15 +240,16 @@ If `boto3` is used for other AWS services, only remove Bedrock-specific code.
 Comment out (do NOT delete) old env vars:
 
 If the user hasn't set up their API key yet, walk them through it:
-1. Direct them to **https://gateway.merge.dev** to create or copy their API key (starts with `mg_`).
-2. Ask the user to paste their key, then write it directly to the `.env` file for them.
-3. Never tell the user to manually edit the `.env` — do it for them after they provide the key.
+1. Direct the user to **https://gateway.merge.dev** to create or copy their API key (starts with `mg_`).
+2. Ask if they're working on a **local project** or a **deployed environment**:
+   - **Local**: Tell them to run this in their terminal: `! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env` (replacing `mg_YOUR_KEY` with their actual key). Then verify `.gitignore` includes `.env`.
+   - **Deployed**: Tell them to add `MERGE_GATEWAY_API_KEY` to their secrets manager or CI/CD environment variables.
+3. **Never** ask the user to paste their API key into the Claude conversation. Always give them a command to run themselves.
 
 ```
 # AWS_ACCESS_KEY_ID=...            # No longer needed for Bedrock — using MERGE_GATEWAY_API_KEY
 # AWS_SECRET_ACCESS_KEY=...        # No longer needed for Bedrock — using MERGE_GATEWAY_API_KEY
 MERGE_GATEWAY_API_KEY=mg_...  (user's actual key)
-MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 ```
 
 ### 9. Verify
@@ -267,7 +266,6 @@ load_dotenv()
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
 response = client.responses.create(
@@ -288,7 +286,6 @@ dotenv.config();
 
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 
 async function main() {
@@ -309,5 +306,5 @@ main();
 - **Never delete old configuration** — comment out old env vars with a note about the replacement.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
+- **Base URL** — The SDK defaults to `https://api-gateway.merge.dev/v1`. Only pass `base_url`/`baseUrl` if the user has a custom gateway endpoint.
 - **Ask before removing boto3** — It may be used for other AWS services beyond Bedrock.

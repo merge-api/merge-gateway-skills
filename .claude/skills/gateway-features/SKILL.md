@@ -17,7 +17,7 @@ All examples below are shown in both languages. Detect the user's stack and show
 ### 1. Verify Existing Integration
 
 Before showing advanced features, confirm the user has a working Gateway setup:
-- Check for `MERGE_GATEWAY_API_KEY` and `MERGE_GATEWAY_BASE_URL` in `.env`
+- Check for `MERGE_GATEWAY_API_KEY` in `.env`
 - Check for `merge-gateway-sdk` in dependencies
 - Check for `MergeGateway` client usage in code
 
@@ -34,7 +34,6 @@ import os
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
 # Tag requests for tracking
@@ -56,7 +55,6 @@ import { MergeGateway } from "merge-gateway-sdk";
 
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 
 // Tag requests for tracking
@@ -201,7 +199,6 @@ Python:
 ```python
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
 question = "What is the capital of France?"
@@ -221,7 +218,6 @@ TypeScript:
 ```typescript
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 
 const question = "What is the capital of France?";
@@ -423,6 +419,6 @@ These dashboard features complement the SDK features above. Tags and project IDs
 ## Cross-Cutting Rules
 
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
+- **Base URL** — The SDK defaults to `https://api-gateway.merge.dev/v1`. Only pass `base_url`/`baseUrl` if the user has a custom gateway endpoint.
 - **Tags are optional** — Don't add tags to every call. Suggest them where they add value (production code, cost tracking, multi-team projects).
 - **Routing metadata adds latency** — Only use `include_routing_metadata=True` when debugging or during development. Don't leave it on in production unless needed.

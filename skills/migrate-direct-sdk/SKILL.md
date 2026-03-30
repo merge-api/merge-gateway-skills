@@ -61,7 +61,6 @@ client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 from merge_gateway import MergeGateway
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 ```
 
@@ -75,7 +74,6 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 import { MergeGateway } from "merge-gateway-sdk";
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 ```
 
@@ -102,7 +100,6 @@ client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 from merge_gateway import MergeGateway
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 ```
 
@@ -116,7 +113,6 @@ const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 import { MergeGateway } from "merge-gateway-sdk";
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 ```
 
@@ -145,7 +141,6 @@ from merge_gateway import MergeGateway
 import os
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 response = client.responses.create(
     model="google/gemini-2.0-flash",
@@ -167,7 +162,6 @@ console.log(result.response.text());
 import { MergeGateway } from "merge-gateway-sdk";
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 const response = await client.responses.create({
   model: "google/gemini-2.0-flash",
@@ -219,9 +213,11 @@ const embedding = response.data[0].embedding;
 Replace multiple provider keys with a single Gateway key:
 
 If the user hasn't set up their API key yet, walk them through it:
-1. Direct them to **https://gateway.merge.dev** to create or copy their API key (starts with `mg_`).
-2. Ask the user to paste their key, then write it directly to the `.env` file for them.
-3. Never tell the user to manually edit the `.env` — do it for them after they provide the key.
+1. Direct the user to **https://gateway.merge.dev** to create or copy their API key (starts with `mg_`).
+2. Ask if they're working on a **local project** or a **deployed environment**:
+   - **Local**: Tell them to run this in their terminal: `! echo "MERGE_GATEWAY_API_KEY=mg_YOUR_KEY" >> .env` (replacing `mg_YOUR_KEY` with their actual key). Then verify `.gitignore` includes `.env`.
+   - **Deployed**: Tell them to add `MERGE_GATEWAY_API_KEY` to their secrets manager or CI/CD environment variables.
+3. **Never** ask the user to paste their API key into the Claude conversation. Always give them a command to run themselves.
 
 ```
 # Before
@@ -231,7 +227,6 @@ GOOGLE_API_KEY=AI...
 
 # After
 MERGE_GATEWAY_API_KEY=mg_...  (user's actual key)
-MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 # OPENAI_API_KEY=sk-...          # Replaced by MERGE_GATEWAY_API_KEY
 # ANTHROPIC_API_KEY=sk-ant-...   # Replaced by MERGE_GATEWAY_API_KEY
 # GOOGLE_API_KEY=AI...           # Replaced by MERGE_GATEWAY_API_KEY
@@ -253,7 +248,6 @@ load_dotenv()
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
-    base_url=os.environ["MERGE_GATEWAY_BASE_URL"] + "/v1",
 )
 
 response = client.responses.create(
@@ -274,7 +268,6 @@ dotenv.config();
 
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
-  baseUrl: process.env.MERGE_GATEWAY_BASE_URL + "/v1",
 });
 
 async function main() {
@@ -295,6 +288,6 @@ main();
 - **Never delete old configuration** — comment out old env vars with a note about the replacement.
 - **Idempotency** — Check if migration is already partially applied before making changes.
 - **Provider-prefixed models** — ALL model names must use `provider/model` format.
-- **Base URL** — The env var `MERGE_GATEWAY_BASE_URL` should be set **without** `/v1` (e.g., `https://api-gateway.merge.dev`). Always append `/v1` in code. If the env var already contains `/v1`, do NOT append it again — check for this to avoid a double `/v1` path.
-- **Anthropic SDK compatibility** — If keeping Anthropic SDK as alternative, do NOT append `/v1`: `os.environ["MERGE_GATEWAY_BASE_URL"]`.
+- **Base URL** — The SDK defaults to `https://api-gateway.merge.dev/v1`. Only pass `base_url`/`baseUrl` if the user has a custom gateway endpoint.
+- **Anthropic SDK compatibility** — If keeping Anthropic SDK as alternative, pass `base_url="https://api-gateway.merge.dev"` (without `/v1`, since the Anthropic SDK appends its own path).
 
