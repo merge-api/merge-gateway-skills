@@ -6,7 +6,7 @@ Guide a developer through adding Merge Gateway to an existing project. Detect th
 
 The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
 
-- **Python:** `pip install merge-gateway-sdk`
+- **Python:** `pip3 install merge-gateway-sdk`
 - **TypeScript/Node:** `npm install merge-gateway-sdk`
 
 Detect the user's stack and show the relevant language.
@@ -29,17 +29,28 @@ Report what you found to the user before proceeding.
 
 Check if `MERGE_GATEWAY_API_KEY` is already set in the environment or `.env` file. If it is, confirm with the user and move on.
 
-If not, direct the user to create one:
-- Go to the **Get Started** page on the [Gateway dashboard](https://app.merge.dev/get-started) and complete the API key step
-- Copy the key and add it to their `.env` file as `MERGE_GATEWAY_API_KEY`
+If not, walk the user through these exact steps:
 
-**Gateway base URL** — default: `https://api-gateway.merge.dev`
+**Step 2a.** Tell the user to go to **https://gateway.merge.dev** and create or copy their API key (it starts with `mg_`).
+
+**Step 2b.** Ask the user to paste their API key. Once they provide it, write it directly to the `.env` file for them using the Edit or Write tool:
+
+```
+MERGE_GATEWAY_API_KEY=<the key the user provided>
+MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
+```
+
+If a `.env` file already exists, append these lines to it. If one doesn't exist, create it.
+
+**Step 2c.** Check that `.gitignore` includes `.env`. If not, add it and warn the user that `.env` files should never be committed to git.
+
+**IMPORTANT:** Do not tell the user to manually edit their `.env` file. Write it for them after they provide the key. Never log, echo, or display the full API key in terminal output.
 
 ### 3. Install the Merge Gateway SDK
 
 Python:
 ```bash
-pip install merge-gateway-sdk
+pip3 install merge-gateway-sdk
 ```
 
 TypeScript/Node:
@@ -148,15 +159,16 @@ If a centralized config exists, update the Gateway settings there and have call 
 
 ### 6. Set Up Environment Variables
 
-Create or update `.env` (and `.env.example` if it exists):
+If the `.env` file was already set up in Step 2, verify it contains both `MERGE_GATEWAY_API_KEY` and `MERGE_GATEWAY_BASE_URL`. If not, add the missing variable. The `.env` should have:
+
 ```
-MERGE_GATEWAY_API_KEY=mg_your_api_key_here
+MERGE_GATEWAY_API_KEY=mg_...  (the user's actual key from Step 2)
 MERGE_GATEWAY_BASE_URL=https://api-gateway.merge.dev
 ```
 
 **IMPORTANT:** `MERGE_GATEWAY_BASE_URL` must NOT include `/v1`. The `/v1` is appended in code. If you find the env var already set with `/v1`, strip it to avoid double-pathing.
 
-Check `.gitignore` includes `.env`. If not, warn the user.
+Verify `.gitignore` includes `.env`.
 
 Comment out (do NOT delete) any old provider API key env vars:
 ```
@@ -165,12 +177,15 @@ Comment out (do NOT delete) any old provider API key env vars:
 
 ### 7. Verify Integration
 
-Generate a test script that makes one call through Gateway:
+Generate a test script, write it to the project, and run it. The test must produce a visible successful response.
 
 Python (`test_gateway.py`):
 ```python
 import os
+from dotenv import load_dotenv
 from merge_gateway import MergeGateway
+
+load_dotenv()
 
 client = MergeGateway(
     api_key=os.environ["MERGE_GATEWAY_API_KEY"],
@@ -178,17 +193,22 @@ client = MergeGateway(
 )
 
 response = client.responses.create(
-    model="openai/gpt-4o",
+    model="openai/gpt-4o-mini",
     input=[
-        {"type": "message", "role": "user", "content": "Say 'Gateway integration successful!' and nothing else."},
+        {"type": "message", "role": "user", "content": "What is 2 + 2? Reply with just the number."},
     ],
 )
-print(response.output[0].content[0].text)
+print("Gateway response:", response.output[0].content[0].text)
+print("Model used:", response.model)
+print("Integration verified successfully!")
 ```
 
 TypeScript (`test_gateway.ts`):
 ```typescript
 import { MergeGateway } from "merge-gateway-sdk";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const client = new MergeGateway({
   apiKey: process.env.MERGE_GATEWAY_API_KEY!,
@@ -197,16 +217,23 @@ const client = new MergeGateway({
 
 async function main() {
   const response = await client.responses.create({
-    model: "openai/gpt-4o",
+    model: "openai/gpt-4o-mini",
     input: [
-      { type: "message", role: "user", content: "Say 'Gateway integration successful!' and nothing else." },
+      { type: "message", role: "user", content: "What is 2 + 2? Reply with just the number." },
     ],
   });
-  console.log(response.output[0].content[0].text);
+  console.log("Gateway response:", response.output[0].content[0].text);
+  console.log("Model used:", response.model);
+  console.log("Integration verified successfully!");
 }
 
 main();
 ```
+
+**Run the test script** and confirm it prints a response. If it fails, check:
+- Is `MERGE_GATEWAY_API_KEY` set correctly in `.env`?
+- Is `MERGE_GATEWAY_BASE_URL` set to `https://api-gateway.merge.dev` (without `/v1`)?
+- Is `dotenv` / `python-dotenv` installed for loading `.env` files?
 
 **Embeddings migration:**
 

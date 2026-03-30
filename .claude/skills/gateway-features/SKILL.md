@@ -7,7 +7,7 @@ Walk the user through Gateway's advanced features that differentiate it from cal
 
 The Merge Gateway SDK is available in both **Python** and **TypeScript/Node**:
 
-- **Python:** `pip install merge-gateway-sdk`
+- **Python:** `pip3 install merge-gateway-sdk`
 - **TypeScript/Node:** `npm install merge-gateway-sdk`
 
 All examples below are shown in both languages. Detect the user's stack and show the relevant language.
@@ -408,12 +408,15 @@ console.log(`Total tokens: ${batchResponse.usage?.total_tokens}`);
 
 ## What to Configure in the Dashboard
 
-After learning these SDK features, direct the user to the [Gateway dashboard](https://app.merge.dev) to configure:
+After learning these SDK features, direct the user to the [Gateway dashboard](https://gateway.merge.dev) to configure:
 
+- **Tags** — Create and manage tags at [gateway.merge.dev/tags](https://gateway.merge.dev/tags)
 - **Routing Policies** — Set up fallback chains, load balancing across providers, and cost-optimized routing
 - **Budgets** — Set spending limits per API key, project, or tag
 - **Usage Analytics** — View request volumes, costs, and latency breakdowns by model, tag, or project
 - **API Key Management** — Create and rotate API keys with different permissions
+
+For full documentation, see [docs.merge.dev/merge-gateway](https://docs.merge.dev/merge-gateway).
 
 These dashboard features complement the SDK features above. Tags and project IDs you set in code become filterable dimensions in the dashboard.
 
