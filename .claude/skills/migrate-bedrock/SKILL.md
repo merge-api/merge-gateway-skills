@@ -295,6 +295,8 @@ for await (const chunk of stream) {
 console.log();
 ```
 
+For handling midstream provider fallbacks during streaming, see the `gateway-features` skill.
+
 ### 8. Clean Up AWS Dependencies
 
 Ask the user if `boto3` is used for anything other than Bedrock. **STOP and wait for their response.** If not:

@@ -334,7 +334,79 @@ for (const block of response.output[0].content) {
 }
 ```
 
-### 8. Token Usage Tracking
+### 8. Streaming with Midstream Fallback
+
+Gateway streams use **accumulated text** — each chunk contains the full response so far, not just the new delta. This design enables a powerful resilience feature: if a provider fails mid-stream (e.g. overloaded, connection dropped), Gateway automatically retries on a fallback provider and restarts the stream from scratch.
+
+When this happens, Gateway emits a special SSE event before the new stream begins:
+
+```json
+{"fallback_restart": true, "model": "bedrock/anthropic.claude-sonnet-4-6-20250514-v1:0"}
+```
+
+Clients should watch for this event and **reset their accumulated state** so the replacement stream renders cleanly.
+
+Python:
+```python
+response = client.responses.create(
+    model="openai/gpt-4o",
+    input=[{"type": "message", "role": "user", "content": "Tell me a story."}],
+    stream=True,
+)
+
+prev_text = ""
+for chunk in response:
+    # Check for midstream fallback restart
+    if isinstance(chunk, dict) and chunk.get("fallback_restart"):
+        print(f"\n[provider failed — retrying on {chunk['model']}]")
+        prev_text = ""
+        continue
+
+    if chunk.get("object") == "response.stream":
+        content = chunk.get("output", [{}])[0].get("content", [])
+        if content and content[0].get("type") == "text":
+            new_text = content[0].get("text", "")
+            print(new_text[len(prev_text):], end="", flush=True)
+            prev_text = new_text
+print()
+```
+
+TypeScript:
+```typescript
+const stream = await client.responses.create({
+  model: "openai/gpt-4o",
+  input: [{ type: "message", role: "user", content: "Tell me a story." }],
+  stream: true,
+});
+
+let prevText = "";
+for await (const chunk of stream) {
+  // Check for midstream fallback restart
+  if ("fallback_restart" in chunk) {
+    console.log(`\n[provider failed — retrying on ${chunk.model}]`);
+    prevText = "";
+    continue;
+  }
+
+  if (chunk.object === "response.stream") {
+    const output = (chunk.output as any[])?.[0];
+    const content = output?.content?.[0];
+    if (content?.type === "text") {
+      const newText = content.text as string;
+      process.stdout.write(newText.slice(prevText.length));
+      prevText = newText;
+    }
+  }
+}
+console.log();
+```
+
+**Key points:**
+- The `fallback_restart` event is **safe to ignore** — if you don't handle it, the stream simply restarts with new accumulated content from the fallback provider. Handling it gives a cleaner UX (no partial text from the failed provider lingering).
+- Non-streaming requests handle fallback automatically and transparently — no client changes needed.
+- The `model` field in the event tells you which provider is now serving the request.
+
+### 9. Token Usage Tracking
 
 Every response includes token usage data:
 
@@ -365,7 +437,7 @@ if (response.usage) {
 }
 ```
 
-### 9. Embeddings
+### 10. Embeddings
 
 Generate embeddings through Gateway with any supported embedding model:
 
