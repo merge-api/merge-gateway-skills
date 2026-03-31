@@ -311,6 +311,8 @@ for await (const chunk of stream) {
 console.log();
 ```
 
+For handling midstream provider fallbacks during streaming, see the `gateway-features` skill.
+
 Ask the user if they want to run the test script. **STOP and wait for their response before proceeding.**
 
 ### 8. Error Handling
