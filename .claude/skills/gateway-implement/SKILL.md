@@ -27,10 +27,14 @@ claude plugin update merge-gateway@merge-gateway-skills
 Search the project for existing LLM SDK usage:
 
 - **Python:** Check `requirements.txt`, `pyproject.toml`, `Pipfile`, `setup.py` for `openai`, `anthropic`, `langchain`, `litellm`, `boto3`, `google-generativeai`
-- **TypeScript/Node:** Check `package.json` for `openai`, `@anthropic-ai/sdk`, `langchain`, `litellm`, `@google/generative-ai`, `@azure/openai`
+- **TypeScript/Node:** Check `package.json` for `openai`, `@anthropic-ai/sdk`, `langchain`, `litellm`, `@google/generative-ai`, `@azure/openai`, `ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`, `@openrouter/ai-sdk-provider`
 
 Search for existing LLM client constructors:
 - `OpenAI(`, `new OpenAI({`, `Anthropic(`, `new Anthropic({`, `AzureOpenAI(`, `boto3.client('bedrock`
+- `createOpenAI(`, `createAnthropic(`, `createGoogleGenerativeAI(`, `createOpenRouter(`, `createMergeGateway(`
+- `generateText(`, `streamText(`, `embedMany(` (Vercel AI SDK framework functions)
+
+**If Vercel AI SDK is detected** (`ai` or `@ai-sdk/*` in dependencies), recommend the native Merge Gateway AI SDK provider (`@merge-api/ai-sdk-provider`) instead of the native Merge Gateway SDK. The AI SDK framework stays — only the provider changes. See the `/merge-gateway:migrate-ai-sdk` skill for the full migration flow.
 
 Report what you found to the user before proceeding.
 
