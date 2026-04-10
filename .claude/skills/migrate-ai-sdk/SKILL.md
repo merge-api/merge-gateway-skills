@@ -1,7 +1,7 @@
 
 # Migrate Vercel AI SDK to Merge Gateway
 
-Migrate from `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`, or `@openrouter/ai-sdk-provider` to the native Merge Gateway AI SDK provider (`@merge-api/ai-sdk-provider`).
+Migrate from `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`, or `@openrouter/ai-sdk-provider` to the native Merge Gateway AI SDK provider (`merge-gateway-ai-sdk-provider`).
 
 The Vercel AI SDK framework (`generateText`, `streamText`, `embedMany`) stays the same — only the provider changes.
 
@@ -39,7 +39,7 @@ Report all findings to the user before making changes.
 
 ### 2. Check for Prior Migration
 
-Before making changes, check if `@merge-api/ai-sdk-provider`, `createMergeGateway`, or `MERGE_GATEWAY_API_KEY` already exists in the project. If so, report which parts are already migrated and skip those.
+Before making changes, check if `merge-gateway-ai-sdk-provider`, `createMergeGateway`, or `MERGE_GATEWAY_API_KEY` already exists in the project. If so, report which parts are already migrated and skip those.
 
 ### 3. Choose Migration Path
 
@@ -88,7 +88,7 @@ Install `@ai-sdk/openai` if not already present: `npm install @ai-sdk/openai`
 
 Install the Merge Gateway provider:
 ```bash
-npm install @merge-api/ai-sdk-provider
+npm install merge-gateway-ai-sdk-provider
 ```
 
 Then replace each provider:
@@ -101,7 +101,7 @@ const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const { text } = await generateText({ model: openai("gpt-4o"), prompt: "Hello" });
 
 // After
-import { createMergeGateway } from "@merge-api/ai-sdk-provider";
+import { createMergeGateway } from "merge-gateway-ai-sdk-provider";
 const gateway = createMergeGateway({ apiKey: process.env.MERGE_GATEWAY_API_KEY });
 const { text } = await generateText({ model: gateway("openai/gpt-4o"), prompt: "Hello" });
 ```
@@ -114,7 +114,7 @@ const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const { text } = await generateText({ model: anthropic("claude-sonnet-4-20250514"), prompt: "Hello" });
 
 // After
-import { createMergeGateway } from "@merge-api/ai-sdk-provider";
+import { createMergeGateway } from "merge-gateway-ai-sdk-provider";
 const gateway = createMergeGateway({ apiKey: process.env.MERGE_GATEWAY_API_KEY });
 const { text } = await generateText({ model: gateway("anthropic/claude-sonnet-4-20250514"), prompt: "Hello" });
 ```
@@ -127,7 +127,7 @@ const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_API_KEY });
 const { text } = await generateText({ model: google("gemini-2.0-flash"), prompt: "Hello" });
 
 // After
-import { createMergeGateway } from "@merge-api/ai-sdk-provider";
+import { createMergeGateway } from "merge-gateway-ai-sdk-provider";
 const gateway = createMergeGateway({ apiKey: process.env.MERGE_GATEWAY_API_KEY });
 const { text } = await generateText({ model: gateway("google/gemini-2.0-flash"), prompt: "Hello" });
 ```
@@ -140,7 +140,7 @@ const openrouter = createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY });
 const { text } = await generateText({ model: openrouter("openai/gpt-4o"), prompt: "Hello" });
 
 // After
-import { createMergeGateway } from "@merge-api/ai-sdk-provider";
+import { createMergeGateway } from "merge-gateway-ai-sdk-provider";
 const gateway = createMergeGateway({ apiKey: process.env.MERGE_GATEWAY_API_KEY });
 const { text } = await generateText({ model: gateway("openai/gpt-4o"), prompt: "Hello" });
 // Model names transfer directly — OpenRouter and Gateway use the same provider/model format
@@ -154,7 +154,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 export const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // ai-client.ts — AFTER
-import { createMergeGateway } from "@merge-api/ai-sdk-provider";
+import { createMergeGateway } from "merge-gateway-ai-sdk-provider";
 export const gateway = createMergeGateway({ apiKey: process.env.MERGE_GATEWAY_API_KEY });
 ```
 
@@ -280,7 +280,7 @@ Generate a test script that matches the project's language (JS or TS) and existi
 **JavaScript (`test_gateway.js`):**
 ```javascript
 import "dotenv/config";
-import { createMergeGateway } from "@merge-api/ai-sdk-provider";
+import { createMergeGateway } from "merge-gateway-ai-sdk-provider";
 import { generateText } from "ai";
 
 const gateway = createMergeGateway({
@@ -302,7 +302,7 @@ main();
 **TypeScript (`test_gateway.ts`):**
 ```typescript
 import "dotenv/config";
-import { createMergeGateway } from "@merge-api/ai-sdk-provider";
+import { createMergeGateway } from "merge-gateway-ai-sdk-provider";
 import { generateText } from "ai";
 
 const gateway = createMergeGateway({

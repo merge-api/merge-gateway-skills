@@ -34,7 +34,7 @@ Search for existing LLM client constructors:
 - `createOpenAI(`, `createAnthropic(`, `createGoogleGenerativeAI(`, `createOpenRouter(`, `createMergeGateway(`
 - `generateText(`, `streamText(`, `embedMany(` (Vercel AI SDK framework functions)
 
-**If Vercel AI SDK is detected** (`ai` or `@ai-sdk/*` in dependencies), recommend the native Merge Gateway AI SDK provider (`@merge-api/ai-sdk-provider`) instead of the native Merge Gateway SDK. The AI SDK framework stays — only the provider changes. See the `/merge-gateway:migrate-ai-sdk` skill for the full migration flow.
+**If Vercel AI SDK is detected** (`ai` or `@ai-sdk/*` in dependencies), recommend the native Merge Gateway AI SDK provider (`merge-gateway-ai-sdk-provider`) instead of the native Merge Gateway SDK. The AI SDK framework stays — only the provider changes. See the `/merge-gateway:migrate-ai-sdk` skill for the full migration flow.
 
 Report what you found to the user before proceeding.
 
