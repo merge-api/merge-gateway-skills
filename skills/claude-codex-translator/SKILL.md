@@ -1,6 +1,6 @@
 ---
-name: skill-converter
 description: Convert between Claude SKILL.md files and OpenAI Codex AGENTS.md files (and vice versa). Use this skill whenever the user wants to translate, convert, port, or adapt an AI skill or agent instruction file from one format to the other — e.g. "convert this skill to Codex", "turn this AGENTS.md into a Claude skill", "port my skill file", "make this work with Codex", "translate this for Claude Code". Also triggers when the user asks to make a skill "cross-compatible" or wants to run the same instructions in both systems.
+allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
 # Skill Converter: Claude SKILL.md ↔ Codex AGENTS.md
@@ -18,7 +18,7 @@ Before converting, read `references/format-guide.md` for a deep reference on bot
 First, determine what you've been given:
 
 **It's a Claude SKILL.md if:**
-- Has YAML frontmatter with `name:` and `description:` fields
+- Has YAML frontmatter with `description:` (and often `allowed-tools:`) fields
 - Written as expert briefing prose ("Here's how to...", "When you encounter X...")
 - Contains instructional sections for Claude's reasoning
 - May reference bundled scripts or asset files
@@ -41,8 +41,8 @@ Claude skills are **knowledge briefings**. Codex agent files are **behavioral po
 
 | SKILL.md element | AGENTS.md equivalent |
 |---|---|
-| YAML `name` | H1 heading or comment header |
 | YAML `description` | Opening paragraph: when/why this agent config applies |
+| YAML `allowed-tools` | No equivalent (drop silently) |
 | Instructional prose sections | Imperative rule blocks ("Always...", "Never...", "When X, do Y") |
 | Step-by-step workflows | Numbered command sequences with actual shell invocations |
 | "Claude should consider..." | "Before making changes, check..." |
@@ -52,7 +52,7 @@ Claude skills are **knowledge briefings**. Codex agent files are **behavioral po
 
 ### Process
 
-1. **Strip the frontmatter** — pull `name` and `description` out; use `name` as a H1 header and `description` as an opening orientation paragraph.
+1. **Strip the frontmatter** — pull `description` out; derive the H1 header from the skill's directory name or first heading, and use `description` as an opening orientation paragraph.
 
 2. **Rewrite prose as directives** — scan every instructional paragraph and convert it into imperative sentences. "Claude should verify the file exists before proceeding" → "Always verify the file exists before running commands."
 
@@ -101,7 +101,7 @@ Codex agent files are **policies for autonomous agents**. Claude skill files are
 
 | AGENTS.md element | SKILL.md equivalent |
 |---|---|
-| H1 heading | YAML `name` field |
+| H1 heading | Skill directory name (kebab-case) |
 | Opening orientation paragraph | YAML `description` (with trigger language added) |
 | Imperative rules ("Always X") | Contextual guidance ("When doing X, make sure to...") |
 | Shell command sequences | Workflow steps with explanation of *why* each step |
@@ -112,7 +112,7 @@ Codex agent files are **policies for autonomous agents**. Claude skill files are
 
 ### Process
 
-1. **Create frontmatter** — synthesize `name` from the H1 or file context. Write `description` as a trigger-optimized summary: what Claude should do *and* the specific phrases/contexts that should load this skill. Make the description "pushy" — lean toward over-triggering rather than under.
+1. **Create frontmatter** — write `description` as a trigger-optimized summary: what Claude should do *and* the specific phrases/contexts that should load this skill. Add `allowed-tools` listing the tools the skill needs. Derive the skill name from the H1 or file context and use it as the directory name (kebab-case). Make the description "pushy" — lean toward over-triggering rather than under.
 
 2. **Rewrite directives as guidance** — convert imperative rules into contextual wisdom. "Never commit to main" → "Always work on a feature branch; committing directly to `main` bypasses review gates and should be avoided." Add the *why* where you can infer it.
 
@@ -128,8 +128,8 @@ Codex agent files are **policies for autonomous agents**. Claude skill files are
 
 ```markdown
 ---
-name: [kebab-case-name]
 description: [What this skill does + when to trigger it. Include specific phrases, contexts, file types, or task patterns. Be pushy about triggering.]
+allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
 # [Skill Name]
@@ -159,7 +159,7 @@ description: [What this skill does + when to trigger it. Include specific phrase
 After generating the output, verify:
 
 **For SKILL.md outputs:**
-- [ ] Frontmatter has both `name` and `description`
+- [ ] Frontmatter has `description` and `allowed-tools`
 - [ ] Description includes trigger language (phrases, contexts, task types)
 - [ ] No naked shell commands without surrounding explanation
 - [ ] Reads naturally as a briefing, not a rulebook
