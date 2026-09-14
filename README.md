@@ -1,6 +1,6 @@
 # Merge Gateway — Claude Code Skills
 
-A Claude Code plugin with skills for integrating with, building on, and migrating to [Merge Gateway](https://docs.merge.dev/merge-gateway).
+A Claude Code plugin with skills for integrating with, building on, and migrating to [Merge Gateway](https://docs.merge.dev/merge-gateway), and for setting up [Merge for Workforce](https://docs.merge.dev/merge-workforce) with the `mfw` CLI.
 
 ## Installation
 
@@ -36,6 +36,11 @@ After installing, open Claude Code and try one of these:
 /merge-gateway:build-agent
 ```
 
+### Connect Claude Code to your company's Merge for Workforce
+```
+/merge-gateway:workforce-setup
+```
+
 ### Explore advanced Gateway features
 ```
 /merge-gateway:gateway-features
@@ -66,6 +71,12 @@ Or just describe what you want — Claude will pick the right skill:
 |-------|---------|-------------|
 | **Gateway Implementation** | `/gateway-implement` | Detect your stack, install the SDK, and verify the integration |
 | **Build a Tool-Use Agent** | `/build-agent` | Scaffold an agent with tool definitions and an execution loop |
+
+### Merge for Workforce
+
+| Skill | Command | What it does |
+|-------|---------|-------------|
+| **Workforce Setup** | `/workforce-setup` | Install the `mfw` CLI, sign in through SSO, mint the employee's Gateway credential, and hand Claude Code the company's models and tools |
 
 ### Advanced Features
 
